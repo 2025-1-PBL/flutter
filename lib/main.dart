@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
-//테스트
+import 'home/home_screen.dart';
+
 void main() {
   runApp(const MapMoaApp());
 }

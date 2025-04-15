@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import '../widgets/custom_top_nav_bar.dart';
 
 class MemberManageScreen extends StatefulWidget {
   const MemberManageScreen({super.key});
@@ -8,10 +9,11 @@ class MemberManageScreen extends StatefulWidget {
   State<MemberManageScreen> createState() => _MemberManageScreenState();
 }
 
-class _MemberManageScreenState extends State<MemberManageScreen> with SingleTickerProviderStateMixin {
+class _MemberManageScreenState extends State<MemberManageScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TextEditingController _searchController = TextEditingController();
-  List<String> friends = ['김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ'];
+  final TextEditingController _searchController = TextEditingController();
+  final List<String> friends = ['김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ'];
 
   @override
   void initState() {
@@ -22,79 +24,90 @@ class _MemberManageScreenState extends State<MemberManageScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 4),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFFFA724)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
-        title: const Text(
-          '공유 멤버 관리',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Icon(Icons.person_add_alt_1, color: Colors.black),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.black,
-              indicatorColor: const Color(0xFFFFA724),
-              tabs: const [
-                Tab(text: '친구'),
-                Tab(text: '요청'),
-              ],
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
+      body: Container(
+        color: const Color(0xFFF9FAFB),
+        child: Column(
+          children: [
+            CustomTopBar(
+              title: '공유 멤버 관리',
+              actionIcon: Icons.person_add_alt_1,
+              onAction: () {
+                print('친구 추가 아이콘 클릭됨');
+              },
             ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildFriendTab(),
-                const Center(child: Text('요청 목록')),
-              ],
+            const SizedBox(height: 20),
+            Theme(
+              data:
+              Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: PreferredSize(
+                preferredSize: const Size.fromHeight(kToolbarHeight),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      indicatorColor: const Color(0xFFFFA724),
+                      indicatorWeight: 2.5,
+                      labelColor: const Color(0xFFFFA724),
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                      unselectedLabelStyle: const TextStyle(fontSize: 18),
+                      tabs: const [
+                        Tab(text: '친구'),
+                        Tab(text: '요청'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildFriendTab(),
+                  const Center(child: Text('요청 목록')),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildFriendTab() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchBar(),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('${friends.length}명', style: const TextStyle(fontSize: 14, color: Colors.black)),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 30),
+          Text('${friends.length}명',
+              style: const TextStyle(fontSize: 18, color: Colors.black)),
+          const SizedBox(height: 10),
           Expanded(
             child: ListView.separated(
+              padding: EdgeInsets.zero,
               itemCount: friends.length,
-              separatorBuilder: (_, __) => const Divider(color: Color(0xFFE0E0E0)),
+              separatorBuilder: (_, __) =>
+              const Divider(color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
                 return ListTile(
                   leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFE0E0E0),
+                    backgroundColor: Colors.grey,
                     child: Icon(Icons.person, color: Colors.white),
                   ),
                   title: Text(friends[index]),
-                  trailing: const Icon(Icons.delete_outline, color: Colors.grey),
-                  onTap: () {}, // 친구 클릭 시
+                  trailing:
+                  const Icon(Icons.delete_outline, color: Colors.grey),
+                  onTap: () {},
                 );
               },
             ),
@@ -105,26 +118,44 @@ class _MemberManageScreenState extends State<MemberManageScreen> with SingleTick
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.search, color: Color(0xFFBDBDBD)),
-        hintText: '친구의 닉네임을 검색하세요.',
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
+    return Container(
+      width: 350,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2B1D1D).withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      onChanged: (query) {
-        // 검색 필터링 로직 추가 가능
-      },
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search, color: Color(0xFFBDBDBD)),
+          hintText: '친구의 닉네임을 검색하세요.',
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Color(0xFFFFA724)),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        onChanged: (query) {
+          // 검색 필터링 로직 추가 가능
+        },
+      ),
     );
   }
 }

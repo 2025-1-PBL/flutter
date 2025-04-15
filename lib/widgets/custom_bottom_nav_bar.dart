@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mapmoa/screens/home_screen.dart';
-import 'package:mapmoa/screens/map_page.dart';
-import 'package:mapmoa/screens/memo_page.dart';
-import 'package:mapmoa/screens/community_page.dart';
-import 'package:mapmoa/screens/mypage_screen.dart';
+import 'package:mapmoa/home/home_screen.dart';
+import 'package:mapmoa/home/map_page.dart';
+import 'package:mapmoa/home/memo_page.dart';
+import 'package:mapmoa/home/community_page.dart';
+import 'package:mapmoa/mypage/mypage_screen.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -12,56 +12,71 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: currentIndex,
-      selectedItemColor: const Color(0xFFFFA724),
-      unselectedItemColor: const Color(0xFFBDBDBD),
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      onTap: (index) {
-        if (index == currentIndex) return;
+    final List<Map<String, dynamic>> navItems = [
+      {'icon': Icons.home, 'label': '홈', 'page': const HomeScreen()},
+      {'icon': Icons.map, 'label': '지도', 'page': const MapPage()},
+      {'icon': Icons.calendar_today, 'label': '일정', 'page': const MemoPage()},
+      {'icon': Icons.group, 'label': '커뮤니티', 'page': const CommunityPage()},
+      {'icon': Icons.person, 'label': 'MY', 'page': const MyPageScreen()},
+    ];
 
-        switch (index) {
-          case 0:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-            break;
-          case 1:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const MapPage()),
-            );
-            break;
-          case 2:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const MemoPage()),
-            );
-            break;
-          case 3:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const CommunityPage()),
-            );
-            break;
-          case 4:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const MyPageScreen()),
-            );
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-        BottomNavigationBarItem(icon: Icon(Icons.map), label: '지도'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: '일정'),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: '커뮤니티'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: '마이페이지'),
-      ],
+    return Container(
+      height: 80,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(navItems.length, (index) {
+          final isSelected = index == currentIndex;
+          final color = isSelected ? const Color(0xFFFFA724) : const Color(0xFFBDBDBD);
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: GestureDetector(
+              onTap: () {
+                if (index == currentIndex) return;
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => navItems[index]['page']),
+                );
+              },
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(
+                width: 70,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Icon(
+                        navItems[index]['icon'],
+                        size: 25,
+                        color: color,
+                      ),
+                    ),
+                    Text(
+                      navItems[index]['label'],
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 }

@@ -18,6 +18,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
 
+  flutter_native_splash: ^2.0.1+1
+
+flutter_native_splash:
+  color: "#FFA724"
+  image: assets/logoo.png
+
 flutter:
   uses-material-design: true
 
