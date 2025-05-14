@@ -1,8 +1,77 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  final bool showSignupComplete;
+
+  const HomeScreen({super.key, this.showSignupComplete = false});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.showSignupComplete) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showSignupCompleteModal(context);
+      });
+    }
+  }
+
+  void _showSignupCompleteModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          width: double.infinity,
+          height: 200,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '회원가입',
+                        style: TextStyle(
+                          color: Color(0xFFFFA724),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '이 되었습니다!',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  '맵모의 회원이 되신 것을 환영합니다!',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +79,7 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0), // ✅ 공통 하단바 적용
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SafeArea(
         child: Column(
           children: [

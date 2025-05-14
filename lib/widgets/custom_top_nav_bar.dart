@@ -50,3 +50,4 @@ class CustomTopBar extends StatelessWidget {
     );
   }
 }
+

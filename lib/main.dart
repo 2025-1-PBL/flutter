@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home/home_screen.dart';
+import 'login/start.dart';
 
 void main() {
   runApp(const MapMoaApp());
@@ -15,9 +15,9 @@ class MapMoaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.orange,
-        fontFamily: 'Pretendard', // 사용 중이면
+        fontFamily: 'Pretendard',
       ),
-      home: const HomeScreen(),
+      home: const LoginScreen(),
     );
   }
 }
