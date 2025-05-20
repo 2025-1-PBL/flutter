@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
+import '../map/map_main.dart';
 
 class MapMainPage extends StatefulWidget {
   const MapMainPage({super.key});

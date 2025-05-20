@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
+import '../map/map_main.dart';
+
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -191,14 +193,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMapCard() {
-    return Container(
-      decoration: _boxDecoration(),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.asset(
-          'assets/map.png',
-          fit: BoxFit.cover,
-          width: double.infinity,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MapMainPage()),
+        );
+      },
+      child: Container(
+        decoration: _boxDecoration(),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            'assets/map.png',
+            fit: BoxFit.cover,
+            width: double.infinity,
+          ),
         ),
       ),
     );
