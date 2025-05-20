@@ -47,7 +47,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 40), // ✅ 마진 40
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -72,8 +72,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                       hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(28),
                         borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -98,8 +97,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                       hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(28),
                         borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -111,12 +109,12 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Center(
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isButtonEnabled ? _onChangePasswordPressed : null,
                       style: ElevatedButton.styleFrom(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: _isButtonEnabled
                             ? const Color(0xFFFFA724)
                             : const Color(0xFFBDBDBD),
