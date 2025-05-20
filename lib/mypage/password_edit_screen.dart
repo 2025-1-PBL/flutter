@@ -1,42 +1,33 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_top_nav_bar.dart';
+import 'password_reset_screen.dart'; // ✅ 새 화면 import
 
-class EditNicknameScreen extends StatefulWidget {
-  const EditNicknameScreen({super.key});
+class PasswordEditScreen extends StatefulWidget {
+  const PasswordEditScreen({super.key});
 
   @override
-  State<EditNicknameScreen> createState() => _EditNicknameScreenState();
+  State<PasswordEditScreen> createState() => _PasswordEditScreenState();
 }
 
-class _EditNicknameScreenState extends State<EditNicknameScreen> {
-  final _controller = TextEditingController();
-  bool _isError = false;
-  bool _isInputValid = false;
-
-  void _validateAndSubmit() {
-    final text = _controller.text.trim();
-    if (text.length < 2 || text.length > 10) {
-      setState(() {
-        _isError = true;
-      });
-    } else {
-      setState(() {
-        _isError = false;
-      });
-      // TODO: 서버에 닉네임 저장 로직
-    }
-  }
+class _PasswordEditScreenState extends State<PasswordEditScreen> {
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isButtonActive = false;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      final text = _controller.text.trim();
+    _passwordController.addListener(() {
       setState(() {
-        _isInputValid = text.length >= 1;
-        _isError = text.isNotEmpty && (text.length < 2 || text.length > 10);
+        _isButtonActive = _passwordController.text.trim().isNotEmpty;
       });
     });
+  }
+
+  void _onNextPressed() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PasswordResetScreen()),
+    );
   }
 
   @override
@@ -47,7 +38,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CustomTopBar(
-            title: '닉네임 변경',
+            title: '비밀번호 변경',
             onBack: () => Navigator.pop(context),
           ),
           Expanded(
@@ -58,7 +49,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
                 children: [
                   const SizedBox(height: 32),
                   const Text(
-                    '새로운 닉네임을 입력해주세요.',
+                    '현재 비밀번호를 입력해주세요',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -68,52 +59,43 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
                   const Divider(thickness: 1, color: Colors.black),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: _controller,
+                    controller: _passwordController,
+                    obscureText: true,
                     decoration: InputDecoration(
-                      hintText: '새로운 닉네임',
+                      hintText: '현재 비밀번호 입력',
                       hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: _isError ? Colors.red : const Color(0xFFE0E0E0),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: _isError ? Colors.red : const Color(0xFFFFA724),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFFFA724)),
                       ),
                     ),
                   ),
-                  if (_isError) ...[
-                    const SizedBox(height: 8),
-                    const Text(
-                      '닉네임을 2~10자로 입력해주세요.',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ],
                   const SizedBox(height: 32),
                   Center(
                     child: ElevatedButton(
-                      onPressed: _isInputValid ? _validateAndSubmit : null,
+                      onPressed: _isButtonActive ? _onNextPressed : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
-                        backgroundColor:
-                        _isInputValid ? const Color(0xFFFFA724) : const Color(0xFFBDBDBD),
+                        backgroundColor: _isButtonActive
+                            ? const Color(0xFFFFA724)
+                            : const Color(0xFFBDBDBD),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       child: const Text(
-                        '변경하기',
+                        '다음',
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),

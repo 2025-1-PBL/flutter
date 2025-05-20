@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
-import 'write_post_screen.dart';
+import 'write_post.dart';
+import 'post_detail_screen.dart'; // 상세 페이지 import
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -24,6 +25,8 @@ class _CommunityPageState extends State<CommunityPage> {
   ];
 
   List<Map<String, dynamic>> filteredPosts = [];
+
+  Color get fabColor => isFabPressed ? const Color(0xFFFFA724) : const Color(0xFF316954);
 
   @override
   void initState() {
@@ -96,30 +99,23 @@ class _CommunityPageState extends State<CommunityPage> {
           ],
         ),
       ),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(-60, -15),
-        child: FloatingActionButton(
-          onPressed: () async {
-            // 색 변경
-            setState(() => isFabPressed = true);
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          setState(() => isFabPressed = true);
+          await Future.delayed(const Duration(milliseconds: 300));
+          if (!mounted) return;
+          setState(() => isFabPressed = false);
 
-            // 짧은 대기 후 색 복귀
-            await Future.delayed(const Duration(milliseconds: 300));
-            if (!mounted) return;
-
-            setState(() => isFabPressed = false);
-
-            // 페이지 이동
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const WritePostScreen()),
-            );
-          },
-          backgroundColor: isFabPressed ? Colors.red : const Color(0xFF316954),
-          shape: const CircleBorder(),
-          child: const Icon(Icons.edit, color: Colors.white),
-        ),
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const WritePostScreen()),
+          );
+        },
+        backgroundColor: fabColor,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.edit, color: Colors.white),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
     );
   }
@@ -177,14 +173,14 @@ class _CommunityPageState extends State<CommunityPage> {
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: [
-          const Text('심슨 님의 흔적을 확인하세요'),
-          const Spacer(),
-          const Icon(Icons.person, size: 20),
-          const SizedBox(width: 12),
-          const Icon(Icons.favorite, size: 20),
-          const SizedBox(width: 12),
-          const Icon(Icons.bookmark, size: 20),
+        children: const [
+          Text('심슨 님의 흔적을 확인하세요'),
+          Spacer(),
+          Icon(Icons.person, size: 20),
+          SizedBox(width: 12),
+          Icon(Icons.favorite, size: 20),
+          SizedBox(width: 12),
+          Icon(Icons.bookmark, size: 20),
         ],
       ),
     ),
@@ -223,8 +219,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   child: Text(
                     sort,
                     style: TextStyle(
-                      color:
-                      isSelected ? const Color(0xFFFFA724) : Colors.black87,
+                      color: isSelected ? const Color(0xFFFFA724) : Colors.black87,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -260,63 +255,70 @@ class _CommunityPageState extends State<CommunityPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 210,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF316954),
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20)),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PostDetailScreen(post: post),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(post['date'],
-                              style: const TextStyle(
-                                  fontSize: 16, color: Colors.grey)),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on,
-                                  size: 16, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Text(post['location'],
-                                  style: const TextStyle(
-                                      fontSize: 16, color: Colors.grey)),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Text(post['title'],
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          const Icon(Icons.favorite,
-                              size: 20, color: Colors.orange),
-                          const SizedBox(width: 4),
-                          Text('${post['likes']}',
-                              style: const TextStyle(
-                                  fontSize: 20, color: Colors.black)),
-                        ],
-                      ),
-                    ],
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 210,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF316954),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20)),
+                    ),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(post['date'],
+                                style: const TextStyle(
+                                    fontSize: 16, color: Colors.grey)),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on,
+                                    size: 16, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(post['location'],
+                                    style: const TextStyle(
+                                        fontSize: 16, color: Colors.grey)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(post['title'],
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            const Icon(Icons.favorite,
+                                size: 20, color: Color(0xFFFFA724)),
+                            const SizedBox(width: 4),
+                            Text('${post['likes']}',
+                                style: const TextStyle(fontSize: 20)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -341,11 +343,19 @@ class _CommunityPageState extends State<CommunityPage> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.favorite_border),
+              const Icon(Icons.favorite_border, color: Color(0xFFFFA724)),
               const SizedBox(width: 4),
               Text('${post['likes']}'),
             ],
           ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PostDetailScreen(post: post),
+              ),
+            );
+          },
         ),
       );
     },

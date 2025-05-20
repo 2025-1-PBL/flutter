@@ -5,6 +5,12 @@ class CustomTopBar extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onAction;
   final IconData? actionIcon;
+  final String? actionText;
+
+  final Color backgroundColor;
+  final Color titleColor;
+  final Color backIconColor;
+  final Color? actionIconColor;
 
   const CustomTopBar({
     super.key,
@@ -12,42 +18,69 @@ class CustomTopBar extends StatelessWidget {
     this.onBack,
     this.onAction,
     this.actionIcon,
+    this.actionText,
+    this.backgroundColor = const Color(0xFFF9FAFB),
+    this.titleColor = Colors.black,
+    this.backIconColor = const Color(0xFFFFA724),
+    this.actionIconColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF9FAFB),
+      color: backgroundColor,
       padding: const EdgeInsets.fromLTRB(30, 70, 30, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFFFFA724)),
-            onPressed: onBack ?? () => Navigator.pop(context),
-          ),
-          Expanded(
-            child: Center(
+      child: SizedBox(
+        height: 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: backIconColor),
+                onPressed: onBack ?? () => Navigator.pop(context),
+              ),
+            ),
+            Center(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: titleColor,
                 ),
               ),
             ),
-          ),
-          if (actionIcon != null)
-            IconButton(
-              icon: Icon(actionIcon, color: Colors.black),
-              onPressed: onAction,
-            )
-          else
-            const SizedBox(width: 40),
-        ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: actionText != null
+                  ? TextButton(
+                onPressed: onAction,
+                child: Text(
+                  actionText!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: onAction != null
+                        ? const Color(0xFFFFA724)
+                        : Colors.grey,
+                  ),
+                ),
+              )
+                  : actionIcon != null
+                  ? IconButton(
+                icon: Icon(
+                  actionIcon,
+                  color: actionIconColor ?? Colors.black,
+                ),
+                onPressed: onAction,
+              )
+                  : const SizedBox(width: 40),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
