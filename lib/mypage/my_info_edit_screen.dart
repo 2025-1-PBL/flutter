@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'edit_nickname_screen.dart';
 import 'email_edit_screen.dart';
+import 'password_edit_screen.dart';
 import 'withdraw_screen.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_pop_up.dart';
@@ -102,7 +103,7 @@ class MyInfoEditScreen extends StatelessWidget {
                             barrierDismissible: false,
                             builder: (ctx) => LogoutPopup(
                               rootContext: context,
-                              message: '로그아웃 하시겠습니까?', // ✅ 팝업 메시지 전달
+                              message: '로그아웃 하시겠습니까?',
                             ),
                           );
                         },
@@ -132,6 +133,11 @@ class MyInfoEditScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const EmailEditScreen()),
+          );
+        } else if (title == '비밀번호 변경') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PasswordEditScreen()),
           );
         }
       },
