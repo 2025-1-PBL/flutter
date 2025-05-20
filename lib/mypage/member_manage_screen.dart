@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/custom_top_nav_bar.dart';
 
 class MemberManageScreen extends StatefulWidget {
@@ -22,9 +21,14 @@ class _MemberManageScreenState extends State<MemberManageScreen>
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: Container(
         color: const Color(0xFFF9FAFB),
         child: Column(
@@ -38,8 +42,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
             ),
             const SizedBox(height: 20),
             Theme(
-              data:
-              Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: PreferredSize(
                 preferredSize: const Size.fromHeight(kToolbarHeight),
                 child: Container(
@@ -54,7 +57,9 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                       labelColor: const Color(0xFFFFA724),
                       unselectedLabelColor: Colors.grey,
                       labelStyle: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       unselectedLabelStyle: const TextStyle(fontSize: 18),
                       tabs: const [
                         Tab(text: '친구'),
@@ -105,8 +110,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                     child: Icon(Icons.person, color: Colors.white),
                   ),
                   title: Text(friends[index]),
-                  trailing:
-                  const Icon(Icons.delete_outline, color: Colors.grey),
+                  trailing: const Icon(Icons.delete_outline, color: Colors.grey),
                   onTap: () {},
                 );
               },

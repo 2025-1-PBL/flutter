@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'my_info_edit_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'member_manage_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import '../widgets/custom_pop_up.dart'; // ✅ InquiryPopup 사용을 위한 import 추가
 
 class MyPageScreen extends StatelessWidget {
   const MyPageScreen({super.key});
@@ -45,60 +45,6 @@ class MyPageScreen extends StatelessWidget {
     );
   }
 
-  void _showInquiryDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 42),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('문의사항', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
-              const Text('abcd123@naver.com', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const Text('문의 주시면 빠르게 답변해 드리겠습니다.', style: TextStyle(fontSize: 14)),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Clipboard.setData(const ClipboardData(text: 'abcd123@naver.com'));
-                        Navigator.of(ctx).pop();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.black),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('복사하기', style: TextStyle(color: Colors.black)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFA724),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('닫기', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,7 +57,7 @@ class MyPageScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 80),
 
-              // ✅ 심슨 님 프로필 카드
+              // ✅ 프로필 카드
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 decoration: BoxDecoration(
@@ -154,7 +100,7 @@ class MyPageScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // ✅ 공유 멤버 관리 카드 (BoxShadow 적용)
+              // ✅ 공유 멤버 관리
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 height: 80,
@@ -193,7 +139,7 @@ class MyPageScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // ✅ 설정 항목 카드 (BoxShadow + Divider 적용)
+              // ✅ 설정 항목
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -233,7 +179,12 @@ class MyPageScreen extends StatelessWidget {
                     buildTile(
                       icon: Icons.search,
                       title: '문의하기',
-                      onTap: () => _showInquiryDialog(context),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => InquiryPopup(rootContext: context),
+                        );
+                      },
                       isLast: true,
                     ),
                   ],
