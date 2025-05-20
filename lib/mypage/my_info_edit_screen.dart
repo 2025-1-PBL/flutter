@@ -1,13 +1,68 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart'; // MIME 설정
 import 'edit_nickname_screen.dart';
 import 'email_edit_screen.dart';
-import 'password_edit_screen.dart';
 import 'withdraw_screen.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_pop_up.dart';
 
-class MyInfoEditScreen extends StatelessWidget {
+class MyInfoEditScreen extends StatefulWidget {
   const MyInfoEditScreen({super.key});
+
+  @override
+  State<MyInfoEditScreen> createState() => _MyInfoEditScreenState();
+}
+
+class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
+  final ImagePicker _picker = ImagePicker();
+  XFile? _image;
+
+  Future<void> getUserProfileFromLibrary() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxHeight: 600,
+      maxWidth: 600,
+      imageQuality: 50,
+    );
+
+    if (image != null) {
+      setState(() {
+        _image = image;
+      });
+
+      await postUserProfileToDB(image.path);
+    }
+  }
+
+  Future<void> postUserProfileToDB(String imagePath) async {
+    final header = {
+      "Content-Type": "multipart/form-data",
+    };
+
+    final formData = FormData.fromMap({
+      'type': 'image',
+      'image': await MultipartFile.fromFile(
+        imagePath,
+        contentType: MediaType('image', 'png'),
+      ),
+    });
+
+    final dio = Dio();
+
+    try {
+      final response = await dio.post(
+        'https://yourserver.com/api/upload', // 👉 여기를 네 서버 주소로 바꿔
+        data: formData,
+        options: Options(headers: header),
+      );
+      print('업로드 성공: ${response.data}');
+    } catch (e) {
+      print('업로드 실패: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,21 +87,28 @@ class MyInfoEditScreen extends StatelessWidget {
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 48,
-                          backgroundColor: Color(0xFFE0E0E0),
-                          child: Icon(Icons.person, size: 50, color: Colors.white),
+                          backgroundColor: const Color(0xFFE0E0E0),
+                          backgroundImage:
+                          _image != null ? FileImage(File(_image!.path)) : null,
+                          child: _image == null
+                              ? const Icon(Icons.person, size: 50, color: Colors.white)
+                              : null,
                         ),
                         Positioned(
                           bottom: 0,
                           right: 4,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFFFFA724),
+                          child: GestureDetector(
+                            onTap: getUserProfileFromLibrary,
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFFA724),
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: const Icon(Icons.edit, size: 16, color: Colors.white),
                             ),
-                            padding: const EdgeInsets.all(4),
-                            child: const Icon(Icons.edit, size: 16, color: Colors.white),
                           ),
                         ),
                       ],
@@ -133,11 +195,6 @@ class MyInfoEditScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const EmailEditScreen()),
-          );
-        } else if (title == '비밀번호 변경') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const PasswordEditScreen()),
           );
         }
       },

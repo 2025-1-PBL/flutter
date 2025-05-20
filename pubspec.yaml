@@ -12,22 +12,25 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  fluttertoast: ^8.2.12
-  flutter_naver_map: ^1.2.1
+  image_picker: ^1.0.7         # ✅ 이미지 선택용
+  dio: ^5.4.0                  # ✅ HTTP 통신용
+  http_parser: ^4.0.2          # ✅ MIME 설정용
+  fluttertoast: ^8.2.4         # ✅ 토스트 메시지
+  flutter_naver_map: ^1.2.2    # ✅ 네이버 지도 플러그인
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  http: ^0.13.6
   flutter_lints: ^5.0.0
+
   flutter_native_splash: ^2.0.1+1
+
+flutter_native_splash:
+  color: "#FFA724"
+  image: assets/logoo.png
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/map.png
-
-flutter_native_splash:
-  color: "#FFA724"
-  image: assets/logoo.png
