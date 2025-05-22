@@ -67,13 +67,13 @@ class _CommunityPageState extends State<CommunityPage> {
         child: ListView(
           physics: const BouncingScrollPhysics(),
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 25),
             _buildSearchBar(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             _buildTraceCard(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             _buildSortButtons(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Row(
               children: [
                 TextButton(
@@ -81,7 +81,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   child: Text('카드 형식',
                       style: TextStyle(
                           color: isCardView ? const Color(0xFFFFA724) : Colors.grey,
-                          fontSize: 18)),
+                          fontSize: 16)),
                 ),
                 const Text('|'),
                 TextButton(
@@ -89,12 +89,12 @@ class _CommunityPageState extends State<CommunityPage> {
                   child: Text('카테고리 형식',
                       style: TextStyle(
                           color: !isCardView ? const Color(0xFFFFA724) : Colors.grey,
-                          fontSize: 18)),
+                          fontSize: 16)),
                 ),
               ],
             ),
             const Divider(height: 1, thickness: 1),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             isCardView ? _buildHorizontalCardList() : _buildVerticalCategoryList(),
           ],
         ),
@@ -120,42 +120,41 @@ class _CommunityPageState extends State<CommunityPage> {
     );
   }
 
-  Widget _buildSearchBar() => Container(
-    width: 350,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF2B1D1D).withAlpha(13),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFF316954), // 상단 녹색 라인
+            width: 2,
+          ),
         ),
-      ],
-    ),
-    child: TextField(
-      controller: _searchController,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.search, color: Color(0xFFBDBDBD)),
-        hintText: '검색어를 입력하세요.',
-        contentPadding: const EdgeInsets.symmetric(vertical: 10),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Color(0xFFFFA724)),
-        ),
-        filled: true,
-        fillColor: Colors.white,
       ),
-    ),
-  );
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF316954)),
+          hintText: '',
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          filled: false,
+          fillColor: Colors.transparent,
+        ),
+        style: const TextStyle(fontSize: 16),
+      ),
+    );
+  }
 
   Widget _buildTraceCard() => Container(
     height: 40,
@@ -235,7 +234,7 @@ class _CommunityPageState extends State<CommunityPage> {
   Widget _buildHorizontalCardList() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: SizedBox(
-      height: 420,
+      height: 350,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
@@ -246,7 +245,7 @@ class _CommunityPageState extends State<CommunityPage> {
           final isLast = index == filteredPosts.length - 1;
 
           return Container(
-            width: 300,
+            width: 250,
             margin: EdgeInsets.only(
               left: index == 0 ? 0 : 10,
               right: isLast ? 40 : 0,
@@ -268,7 +267,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    height: 210,
+                    height: 170,
                     decoration: BoxDecoration(
                       color: const Color(0xFF316954),
                       borderRadius: const BorderRadius.vertical(
@@ -326,36 +325,61 @@ class _CommunityPageState extends State<CommunityPage> {
     ),
   );
 
-  Widget _buildVerticalCategoryList() => ListView.builder(
+  Widget _buildVerticalCategoryList() => ListView.separated(
     physics: const NeverScrollableScrollPhysics(),
     shrinkWrap: true,
     itemCount: filteredPosts.length,
+    separatorBuilder: (context, index) => const Divider(thickness: 0.5, color: Color(0xFFE0E0E0)),
     itemBuilder: (context, index) {
       final post = filteredPosts[index];
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 30),
-        child: ListTile(
-          tileColor: Colors.white,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          title: Text(post['title']),
-          subtitle: Text(post['location']),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+      return InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PostDetailScreen(post: post),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.favorite_border, color: Color(0xFFFFA724)),
-              const SizedBox(width: 4),
-              Text('${post['likes']}'),
+              // 게시글 정보 (제목 + 위치)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post['title'],
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      post['location'],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 좋아요 / 북마크 아이콘
+              Column(
+                children: const [
+                  Icon(Icons.favorite, color: Color(0xFF316954), size: 20),
+                  SizedBox(height: 8),
+                  Icon(Icons.bookmark, color: Color(0xFF316954), size: 20),
+                ],
+              ),
             ],
           ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PostDetailScreen(post: post),
-              ),
-            );
-          },
         ),
       );
     },

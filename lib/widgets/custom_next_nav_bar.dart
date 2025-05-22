@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 class CustomNextButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool enabled;
-  final String label; // ✅ 기본값 없이 무조건 받아야 함
+  final String label;
 
   const CustomNextButton({
     super.key,
-    required this.label,     // ✅ 필수로 지정
+    required this.label,
     required this.onPressed,
     required this.enabled,
   });

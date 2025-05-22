@@ -35,7 +35,7 @@ class _EmailEditScreenState extends State<EmailEditScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 40), // ✅ 마진 40
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,13 +96,14 @@ class _EmailEditScreenState extends State<EmailEditScreen> {
                   const SizedBox(height: 32),
 
                   // 변경하기 버튼
-                  Center(
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
                         // TODO: 변경 처리 로직
                       },
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: const Color(0xFFBDBDBD),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

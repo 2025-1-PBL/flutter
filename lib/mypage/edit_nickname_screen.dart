@@ -52,7 +52,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 40), // ✅ 마진 40 적용
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -97,13 +97,15 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
                     ),
                   ],
                   const SizedBox(height: 32),
-                  Center(
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isInputValid ? _validateAndSubmit : null,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
-                        backgroundColor:
-                        _isInputValid ? const Color(0xFFFFA724) : const Color(0xFFBDBDBD),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: _isInputValid
+                            ? const Color(0xFFFFA724)
+                            : const Color(0xFFBDBDBD),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

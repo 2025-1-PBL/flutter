@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_top_nav_bar.dart';
-import 'password_reset_screen.dart'; // ✅ 새 화면 import
+import 'password_reset_screen.dart';
 
 class PasswordEditScreen extends StatefulWidget {
   const PasswordEditScreen({super.key});
@@ -43,7 +43,7 @@ class _PasswordEditScreenState extends State<PasswordEditScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 40), // ✅ 변경된 마진
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -66,7 +66,8 @@ class _PasswordEditScreenState extends State<PasswordEditScreen> {
                       hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(28),
                         borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -78,11 +79,12 @@ class _PasswordEditScreenState extends State<PasswordEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Center(
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isButtonActive ? _onNextPressed : null,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: _isButtonActive
                             ? const Color(0xFFFFA724)
                             : const Color(0xFFBDBDBD),
