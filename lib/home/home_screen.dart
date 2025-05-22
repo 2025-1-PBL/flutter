@@ -213,23 +213,23 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: _boxDecoration(),
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: ListView.builder(
-          itemCount: 4,
+          itemCount: 6,
           physics: const BouncingScrollPhysics(),
           itemBuilder: (context, index) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SizedBox(
-              height: 36,
+              height: 20,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: const [
                   Icon(Icons.favorite, color: Color(0xFFFF9900), size: 20),
-                  SizedBox(width: 6),
+                  SizedBox(width: 5),
                   Text('34', style: TextStyle(fontSize: 14)),
-                  SizedBox(width: 10),
+                  SizedBox(width: 5),
                   Icon(Icons.location_on, color: Color(0xFF4CAF50), size: 18),
-                  SizedBox(width: 4),
+                  SizedBox(width: 5),
                   Text('가좌동', style: TextStyle(fontSize: 14)),
-                  SizedBox(width: 10),
+                  SizedBox(width: 5),
                   Expanded(
                     child: Text(
                       '올리브영 할인 레전드 ---',

@@ -39,13 +39,17 @@ class CustomBottomNavBar extends StatelessWidget {
           final color = isSelected ? const Color(0xFFFFA724) : const Color(0xFFBDBDBD);
 
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: GestureDetector(
               onTap: () {
                 if (index == currentIndex) return;
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => navItems[index]['page']),
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) => navItems[index]['page'],
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
                 );
               },
               behavior: HitTestBehavior.opaque,
