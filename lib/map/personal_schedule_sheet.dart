@@ -10,7 +10,7 @@ class PersonalScheduleSheet extends StatelessWidget {
     final personalMemos = getPersonalMemos(); // ✅ 전역 메모 불러오기
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.5,
+      initialChildSize: 0.75,
       minChildSize: 0.3,
       maxChildSize: 0.9,
       builder: (context, scrollController) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
+import 'package:mapmoa/schedule/memo_data.dart';
 
 class MapMainPage extends StatefulWidget {
   const MapMainPage({super.key});
@@ -13,6 +14,7 @@ class MapMainPage extends StatefulWidget {
 class _MapMainPageState extends State<MapMainPage> {
   bool _isInitialized = false;
   bool _isMenuOpen = false;
+  NaverMapController? _mapController;
 
   @override
   void initState() {
@@ -22,10 +24,40 @@ class _MapMainPageState extends State<MapMainPage> {
 
   Future<void> _initializeNaverMap() async {
     final naverMap = FlutterNaverMap();
-    await naverMap.init(clientId: 'til8qbn0pj'); // ✅ 형의 클라이언트 ID
+    await naverMap.init(clientId: 'til8qbn0pj');
     setState(() {
       _isInitialized = true;
     });
+  }
+
+  void _showPersonalScheduleMarkers() {
+    _mapController?.clearOverlays();
+    for (final memo in globalPersonalMemos) {
+      final lat = memo['latitude'];
+      final lng = memo['longitude'];
+      if (lat != null && lng != null) {
+        final marker = NMarker(
+          id: memo['location'] ?? UniqueKey().toString(),
+          position: NLatLng(lat, lng),
+        );
+        _mapController?.addOverlay(marker);
+      }
+    }
+  }
+
+  void _showSharedScheduleMarkers() {
+    _mapController?.clearOverlays();
+    for (final memo in globalSharedMemos) {
+      final lat = memo['latitude'];
+      final lng = memo['longitude'];
+      if (lat != null && lng != null) {
+        final marker = NMarker(
+          id: memo['location'] ?? UniqueKey().toString(),
+          position: NLatLng(lat, lng),
+        );
+        _mapController?.addOverlay(marker);
+      }
+    }
   }
 
   @override
@@ -39,7 +71,9 @@ class _MapMainPageState extends State<MapMainPage> {
     return Scaffold(
       body: Stack(
         children: [
-          const NaverMap(),
+          NaverMap(
+            onMapReady: (controller) => _mapController = controller,
+          ),
 
           // ✅ 지도 위 메뉴 버튼
           Positioned(
@@ -88,8 +122,10 @@ class _MapMainPageState extends State<MapMainPage> {
           debugPrint('$label 버튼 클릭됨');
 
           if (label == '개인 일정') {
+            _showPersonalScheduleMarkers();
             _showPersonalScheduleSheet();
           } else if (label == '공유 일정') {
+            _showSharedScheduleMarkers();
             _showSharedScheduleSheet();
           }
           // 나중에 현재 위치, 이벤트 목록도 처리 가능
@@ -122,14 +158,13 @@ class _MapMainPageState extends State<MapMainPage> {
     );
   }
 
-
   void _showPersonalScheduleSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: true, // ✅ 배경 터치 시 닫히도록 설정
-      enableDrag: true,    // ✅ 드래그로도 닫히게
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) {
         return const PersonalScheduleSheet();
       },
@@ -148,6 +183,4 @@ class _MapMainPageState extends State<MapMainPage> {
       },
     );
   }
-
-
 }
