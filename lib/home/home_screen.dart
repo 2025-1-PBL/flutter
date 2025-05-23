@@ -227,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const BouncingScrollPhysics(),
           itemBuilder: (context, index) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SizedBox(
+            child: SizedBox( //ㅇ
               height: 20,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
