@@ -10,7 +10,7 @@ class SharedScheduleSheet extends StatelessWidget {
     final sharedMemos = getSharedMemos();
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.5,
+      initialChildSize: 0.75,
       minChildSize: 0.3,
       maxChildSize: 0.9,
       builder: (context, scrollController) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mapmoa/schedule/map_select_page.dart';
 
 class MemoWritePage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -37,6 +38,21 @@ class _MemoWritePageState extends State<MemoWritePage> {
     _selectedColor = widget.initialData?['color'] ?? Colors.red;
     latitude = widget.initialData?['latitude'];
     longitude = widget.initialData?['longitude'];
+  }
+
+  Future<void> _selectLocationFromMap() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MapSelectPage()),
+    );
+
+    if (result != null && result['latitude'] != null && result['longitude'] != null) {
+      setState(() {
+        latitude = result['latitude'];
+        longitude = result['longitude'];
+        _locationController.text = result['address'] ?? '선택한 위치';
+      });
+    }
   }
 
   void _submitMemo() {
@@ -102,7 +118,6 @@ class _MemoWritePageState extends State<MemoWritePage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 장소 입력
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -116,13 +131,17 @@ class _MemoWritePageState extends State<MemoWritePage> {
                   Expanded(
                     child: TextField(
                       controller: _locationController,
+                      readOnly: true,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        hintText: '장소를 입력하세요.',
+                        hintText: '장소를 입력하거나 선택하세요.',
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.map, color: Color(0xFFFFA724)),
+                    onPressed: _selectLocationFromMap,
+                  ),
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -138,7 +157,6 @@ class _MemoWritePageState extends State<MemoWritePage> {
                 ],
               ),
             ),
-
             if (_showColorPicker)
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 12),
@@ -147,7 +165,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
                   ],
                 ),
                 child: Row(
@@ -165,10 +183,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
                   }).toList(),
                 ),
               ),
-
             const SizedBox(height: 12),
-
-            // 메모 입력
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
