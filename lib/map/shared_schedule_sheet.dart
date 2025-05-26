@@ -3,7 +3,14 @@ import 'package:mapmoa/schedule/shared_write.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
 
 class SharedScheduleSheet extends StatelessWidget {
-  const SharedScheduleSheet({super.key});
+  final bool showMarkers;
+  final Function(bool) onToggleMarkers;
+
+  const SharedScheduleSheet({
+    super.key,
+    required this.showMarkers,
+    required this.onToggleMarkers,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +32,26 @@ class SharedScheduleSheet extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Icon(Icons.drag_handle, color: Colors.grey),
               ),
-              const Text(
-                '👥 공유 일정',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      '👥 공유 일정',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 10),
+                    Transform.scale(
+                      scale: 0.9,
+                      child: Switch(
+                        value: showMarkers,
+                        onChanged: onToggleMarkers,
+                        activeColor: Color(0xFFFFA724),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Expanded(
