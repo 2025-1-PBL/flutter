@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
-import '../map/map_main.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:mapmoa/event/event_list_sheet.dart';
 
 class MapMainPage extends StatefulWidget {
   const MapMainPage({super.key});
@@ -17,6 +17,8 @@ class _MapMainPageState extends State<MapMainPage> {
   bool _isMenuOpen = false;
   bool _showPersonalMarkers = false;
   bool _showSharedMarkers = false;
+  bool _showEvents = false;
+
   NaverMapController? _mapController;
 
   @override
@@ -79,6 +81,28 @@ class _MapMainPageState extends State<MapMainPage> {
     _refreshAllMarkers();
   }
 
+  void _updateShowEvents(bool show) {
+    setState(() {
+      _showEvents = show;
+    });
+  }
+
+  void _showEventListSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) {
+        return EventListSheet(
+          showEvents: _showEvents,
+          onToggleEvents: _updateShowEvents,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
@@ -93,7 +117,6 @@ class _MapMainPageState extends State<MapMainPage> {
           NaverMap(
             onMapReady: (controller) => _mapController = controller,
           ),
-
           Positioned(
             top: 40,
             right: 20,
@@ -139,10 +162,14 @@ class _MapMainPageState extends State<MapMainPage> {
         onPressed: () {
           debugPrint('$label 버튼 클릭됨');
 
-          if (label == '개인 일정') {
+          if (label == '현재 위치') {
+            // TODO: 현재 위치 이동 함수 호출 (필요 시 구현)
+          } else if (label == '개인 일정') {
             _showPersonalScheduleSheet();
           } else if (label == '공유 일정') {
             _showSharedScheduleSheet();
+          } else if (label == '이벤트 목록') {
+            _showEventListSheet();
           }
         },
         style: ElevatedButton.styleFrom(
