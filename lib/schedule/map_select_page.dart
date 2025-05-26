@@ -60,9 +60,6 @@ class _MapSelectPageState extends State<MapSelectPage> {
       'X-NCP-APIGW-API-KEY': 'An9HynJ2ZOKhkw3hYKxEccniuCX8hJAOvlN0Qayl',
     });
 
-    debugPrint('statusCode: ${response.statusCode}');
-    debugPrint('response body: ${response.body}');
-
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       final results = data['results'] as List;
@@ -114,8 +111,21 @@ class _MapSelectPageState extends State<MapSelectPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFA724),
-        title: const Text('위치 선택'),
+        backgroundColor: const Color(0xFFFFA724), // 형 강조색
+        title: const Text(
+          '위치 선택',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        elevation: 4,
       ),
       body: Stack(
         children: [
@@ -140,8 +150,8 @@ class _MapSelectPageState extends State<MapSelectPage> {
                   ],
                 ),
                 child: Text(
-                  selectedAddress ?? '주소를 불러오는 중...'
-                      '(${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
+                  selectedAddress ?? '주소를 불러오는 중...' +
+                      ' (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
                   style: const TextStyle(fontSize: 14),
                 ),
               ),
