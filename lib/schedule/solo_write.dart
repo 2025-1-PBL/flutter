@@ -14,6 +14,29 @@ class SoloWritePage extends StatelessWidget {
     required this.selectedIndexes,
   });
 
+  Color _stringToColor(dynamic color) {
+    if (color is Color) return color; // 이미 Color 타입이면 그대로
+    if (color is String) {
+      switch (color.toLowerCase()) {
+        case 'red':
+          return Colors.red;
+        case 'orange':
+          return Colors.orange;
+        case 'yellow':
+          return Colors.yellow;
+        case 'green':
+          return Colors.green;
+        case 'blue':
+          return Colors.blue;
+        case 'purple':
+          return Colors.purple;
+        default:
+          return Colors.red; // 기본 색상
+      }
+    }
+    return Colors.red; // 기본 색상
+  }
+
   @override
   Widget build(BuildContext context) {
     if (memos.isEmpty) {
@@ -28,6 +51,7 @@ class SoloWritePage extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = memos[index];
         final isSelected = selectedIndexes.contains(index);
+        final iconColor = _stringToColor(item['color']);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -51,7 +75,7 @@ class SoloWritePage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.place, color: item['color'] ?? Colors.red),
+                      Icon(Icons.place, color: iconColor),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(

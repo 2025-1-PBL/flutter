@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:mapmoa/schedule/shared_write.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart'; // NLatLng 사용을 위한 import
 
 class SharedScheduleSheet extends StatelessWidget {
   final bool showMarkers;
   final Function(bool) onToggleMarkers;
+  final Function(NLatLng) onMemoTap; // ✅ 추가된 콜백
 
   const SharedScheduleSheet({
     super.key,
     required this.showMarkers,
     required this.onToggleMarkers,
+    required this.onMemoTap, // ✅ 필수 인자 등록
   });
 
   @override
@@ -58,7 +61,11 @@ class SharedScheduleSheet extends StatelessWidget {
                 child: SharedWritePage(
                   memos: sharedMemos,
                   onMemoTap: (index) {
-                    debugPrint('공유 메모 탭: $index');
+                    final memo = sharedMemos[index];
+                    debugPrint('공유 메모 탭: lat=${memo['latitude']}, lng=${memo['longitude']}, color=${memo['color']}');
+                    if (memo['latitude'] is double && memo['longitude'] is double) {
+                      onMemoTap(NLatLng(memo['latitude'], memo['longitude']));
+                    }
                   },
                   isSelecting: false,
                   selectedIndexes: {},

@@ -35,9 +35,51 @@ class _MemoWritePageState extends State<MemoWritePage> {
     super.initState();
     _locationController = TextEditingController(text: widget.initialData?['location'] ?? '');
     _memoController = TextEditingController(text: widget.initialData?['memo'] ?? '');
-    _selectedColor = widget.initialData?['color'] ?? Colors.red;
-    latitude = widget.initialData?['latitude'];
-    longitude = widget.initialData?['longitude'];
+
+    final savedColor = widget.initialData?['color'];
+    if (savedColor is Color) {
+      _selectedColor = savedColor;
+    } else if (savedColor is String) {
+      _selectedColor = stringToColor(savedColor);
+    }
+
+    latitude = _parseDouble(widget.initialData?['latitude']);
+    longitude = _parseDouble(widget.initialData?['longitude']);
+  }
+
+  double? _parseDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  Color stringToColor(String colorStr) {
+    switch (colorStr) {
+      case 'red':
+        return Colors.red;
+      case 'orange':
+        return Colors.orange;
+      case 'yellow':
+        return Colors.yellow;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'purple':
+        return Colors.purple;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  String colorToString(Color color) {
+    if (color == Colors.red) return 'red';
+    if (color == Colors.orange) return 'orange';
+    if (color == Colors.yellow) return 'yellow';
+    if (color == Colors.green) return 'green';
+    if (color == Colors.blue) return 'blue';
+    if (color == Colors.purple) return 'purple';
+    return 'blue';
   }
 
   Future<void> _selectLocationFromMap() async {
@@ -51,6 +93,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
         latitude = result['latitude'];
         longitude = result['longitude'];
         _locationController.text = result['address'] ?? '선택한 위치';
+        debugPrint('Selected location updated: lat=$latitude, lng=$longitude');
       });
     }
   }
@@ -79,13 +122,15 @@ class _MemoWritePageState extends State<MemoWritePage> {
       return;
     }
 
-    Navigator.pop(context, {
+    final Map<String, dynamic> dataToReturn = {
       'location': _locationController.text.trim(),
       'memo': _memoController.text.trim(),
-      'color': _selectedColor,
+      'color': colorToString(_selectedColor),
       'latitude': latitude,
       'longitude': longitude,
-    });
+    };
+
+    Navigator.pop(context, dataToReturn);
   }
 
   @override

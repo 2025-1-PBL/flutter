@@ -2,6 +2,28 @@ import 'package:flutter/material.dart';
 
 const String defaultProfileUrl = 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
 
+Color stringToColor(dynamic color) {
+  if (color is Color) return color;
+  if (color is! String) return Colors.grey;
+
+  switch (color) {
+    case 'red':
+      return Colors.red;
+    case 'orange':
+      return Colors.orange;
+    case 'yellow':
+      return Colors.yellow;
+    case 'green':
+      return Colors.green;
+    case 'blue':
+      return Colors.blue;
+    case 'purple':
+      return Colors.purple;
+    default:
+      return Colors.grey;
+  }
+}
+
 class SharedWritePage extends StatefulWidget {
   final List<Map<String, dynamic>> memos;
   final Function(int) onMemoTap;
@@ -50,6 +72,7 @@ class _SharedWritePageState extends State<SharedWritePage> {
         _controllers.putIfAbsent(index, () => TextEditingController());
 
         final String profileUrl = item['profileUrl'] ?? defaultProfileUrl;
+        final Color iconColor = stringToColor(item['color']);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -78,7 +101,7 @@ class _SharedWritePageState extends State<SharedWritePage> {
                         backgroundImage: NetworkImage(profileUrl),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.place, color: item['color'] ?? Colors.red),
+                      Icon(Icons.place, color: iconColor),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(

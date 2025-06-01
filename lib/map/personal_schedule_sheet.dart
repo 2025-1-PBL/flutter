@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:mapmoa/schedule/solo_write.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart'; // NLatLng 타입 사용 위해 import
 
 class PersonalScheduleSheet extends StatelessWidget {
   final bool showMarkers;
   final Function(bool) onToggleMarkers;
+  final Function(NLatLng) onMemoTap;  // 추가: 위치 전달 콜백
 
   const PersonalScheduleSheet({
     super.key,
     required this.showMarkers,
     required this.onToggleMarkers,
+    required this.onMemoTap,  // 필수 파라미터로 추가
   });
 
   @override
@@ -45,10 +48,10 @@ class PersonalScheduleSheet extends StatelessWidget {
                     Transform.scale(
                       scale: 0.9,
                       child: Switch(
-                      value: showMarkers,
-                      onChanged: onToggleMarkers,
-                      activeColor: Color(0xFFFFA724),
-                     ),
+                        value: showMarkers,
+                        onChanged: onToggleMarkers,
+                        activeColor: const Color(0xFFFFA724),
+                      ),
                     ),
                   ],
                 ),
@@ -58,7 +61,12 @@ class PersonalScheduleSheet extends StatelessWidget {
                 child: SoloWritePage(
                   memos: personalMemos,
                   onMemoTap: (index) {
-                    debugPrint('개인 메모 탭: $index');
+                    final memo = personalMemos[index];
+                    // 좌표와 색상 로그 찍기 (디버그)
+                    debugPrint('Tapped memo: lat=${memo['latitude']}, lng=${memo['longitude']}, color=${memo['color']}');
+                    if (memo['latitude'] is double && memo['longitude'] is double) {
+                      onMemoTap(NLatLng(memo['latitude'], memo['longitude']));
+                    }
                   },
                   isSelecting: false,
                   selectedIndexes: {},

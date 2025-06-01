@@ -8,6 +8,8 @@ environment:
   sdk: ^3.7.2
 
 dependencies:
+  permission_handler: ^12.0.0+1
+  geolocator: ^9.0.2
   flutter:
     sdk: flutter
 
@@ -16,7 +18,7 @@ dependencies:
   dio: ^5.4.0                  # ✅ HTTP 통신용
   http_parser: ^4.0.2          # ✅ MIME 설정용
   fluttertoast: ^8.2.4         # ✅ 토스트 메시지
-  flutter_naver_map: ^1.2.2    # ✅ 네이버 지도 플러그인
+  flutter_naver_map: ^1.3.1   # ✅ 네이버 지도 플러그인
 
 dev_dependencies:
   flutter_test:
@@ -34,3 +36,10 @@ flutter:
 
   assets:
     - assets/map.png
+    - assets/location.png
+    - assets/markers/blue.png
+    - assets/markers/green.png
+    - assets/markers/orange.png
+    - assets/markers/purple.png
+    - assets/markers/red.png
+    - assets/markers/yellow.png
