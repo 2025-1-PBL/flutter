@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/custom_top_nav_bar.dart';
 
 class MemberManageScreen extends StatefulWidget {
@@ -12,18 +13,14 @@ class _MemberManageScreenState extends State<MemberManageScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final List<String> friends = ['김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ'];
+  final List<String> requests = ['박ㅇㅇ', 'qusㅇㅇ'];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -37,7 +34,93 @@ class _MemberManageScreenState extends State<MemberManageScreen>
               title: '공유 멤버 관리',
               actionIcon: Icons.person_add_alt_1,
               onAction: () {
-                print('친구 추가 아이콘 클릭됨');
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) {
+                    return Dialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Stack(
+                          children: [
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(height: 16),
+                                const Text(
+                                  '친구 추가',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                TextField(
+                                  controller: _emailController,
+                                  decoration: InputDecoration(
+                                    hintText: '이메일 입력',
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(color: Color(0xFFFFA724)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      // TODO: 친구 요청 로직
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFFFA724),
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      '요청하기',
+                                      style: TextStyle(color: Colors.white, fontSize: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(Icons.close, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
               },
             ),
             const SizedBox(height: 20),
@@ -56,10 +139,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                       indicatorWeight: 2.5,
                       labelColor: const Color(0xFFFFA724),
                       unselectedLabelColor: Colors.grey,
-                      labelStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       unselectedLabelStyle: const TextStyle(fontSize: 18),
                       tabs: const [
                         Tab(text: '친구'),
@@ -76,7 +156,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                 controller: _tabController,
                 children: [
                   _buildFriendTab(),
-                  const Center(child: Text('요청 목록')),
+                  _buildRequestTab(),
                 ],
               ),
             ),
@@ -87,6 +167,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
   }
 
   Widget _buildFriendTab() {
+    final filteredFriends = friends.where((f) => f.contains(_searchController.text)).toList();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
       child: Column(
@@ -94,24 +175,101 @@ class _MemberManageScreenState extends State<MemberManageScreen>
         children: [
           _buildSearchBar(),
           const SizedBox(height: 30),
-          Text('${friends.length}명',
-              style: const TextStyle(fontSize: 18, color: Colors.black)),
+          Text('${filteredFriends.length}명', style: const TextStyle(fontSize: 18, color: Colors.black)),
           const SizedBox(height: 10),
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.zero,
-              itemCount: friends.length,
-              separatorBuilder: (_, __) =>
-              const Divider(color: Color(0xFFE0E0E0)),
+              itemCount: filteredFriends.length,
+              separatorBuilder: (_, __) => const Divider(color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
                 return ListTile(
+                  contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(
                     backgroundColor: Colors.grey,
                     child: Icon(Icons.person, color: Colors.white),
                   ),
-                  title: Text(friends[index]),
+                  title: Text(filteredFriends[index]),
                   trailing: const Icon(Icons.delete_outline, color: Colors.grey),
-                  onTap: () {},
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequestTab() {
+    final filteredRequests = requests.where((r) => r.contains(_searchController.text)).toList();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSearchBar(),
+          const SizedBox(height: 30),
+          Text('${filteredRequests.length}건', style: const TextStyle(fontSize: 18, color: Colors.black)),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: filteredRequests.length,
+              separatorBuilder: (_, __) => const Divider(color: Color(0xFFE0E0E0)),
+              itemBuilder: (context, index) {
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const CircleAvatar(
+                            backgroundColor: Colors.grey,
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(filteredRequests[index], style: const TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  friends.add(filteredRequests[index]);
+                                  requests.remove(filteredRequests[index]);
+                                });
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: const Color(0xFFFFA724),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: const Text('수락', style: TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                requests.remove(filteredRequests[index]);
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            child: const Text('삭제', style: TextStyle(color: Colors.black)),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 );
               },
             ),
@@ -156,9 +314,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
           filled: true,
           fillColor: Colors.white,
         ),
-        onChanged: (query) {
-          // 검색 필터링 로직 추가 가능
-        },
+        onChanged: (query) => setState(() {}),
       ),
     );
   }

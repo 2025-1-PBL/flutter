@@ -1,10 +1,12 @@
+import 'dart:io'; // ✅ FileImage 사용을 위해 필요
 import 'package:flutter/material.dart';
 import 'my_info_edit_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'member_manage_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
-import '../widgets/custom_pop_up.dart'; // ✅ InquiryPopup 사용을 위한 import 추가
+import '../widgets/custom_pop_up.dart';
+import 'package:mapmoa/global/user_profile.dart'; // ✅ 전역 이미지 경로 import
 
 class MyPageScreen extends StatelessWidget {
   const MyPageScreen({super.key});
@@ -80,10 +82,19 @@ class MyPageScreen extends StatelessWidget {
                     );
                   },
                   child: Row(
-                    children: const [
-                      Icon(Icons.account_circle, size: 56, color: Colors.grey),
-                      SizedBox(width: 12),
-                      Expanded(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: const Color(0xFFE0E0E0),
+                        backgroundImage: globalUserProfileImage != null
+                            ? FileImage(File(globalUserProfileImage!))
+                            : null,
+                        child: globalUserProfileImage == null
+                            ? const Icon(Icons.person, size: 40, color: Colors.white)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
                         child: Text(
                           '심슨 님',
                           style: TextStyle(
@@ -93,11 +104,12 @@ class MyPageScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: Colors.grey),
+                      const Icon(Icons.chevron_right, color: Colors.grey),
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
               // ✅ 공유 멤버 관리
@@ -137,6 +149,7 @@ class MyPageScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
               // ✅ 설정 항목
