@@ -71,6 +71,8 @@ class _MemoPageState extends State<MemoPage> {
             'location': currentMemo['location'],
             'memo': currentMemo['memo'],
             'color': currentMemo['color'],
+            'latitude': currentMemo['latitude'],
+            'longitude': currentMemo['longitude'],
           },
         ),
       ),
@@ -79,9 +81,17 @@ class _MemoPageState extends State<MemoPage> {
     if (result != null) {
       setState(() {
         if (isPersonalSelected) {
-          globalPersonalMemos[index] = result;
+          globalPersonalMemos[index]['location'] = result['location'];
+          globalPersonalMemos[index]['memo'] = result['memo'];
+          globalPersonalMemos[index]['color'] = result['color'];
+          globalPersonalMemos[index]['latitude'] = result['latitude'];
+          globalPersonalMemos[index]['longitude'] = result['longitude'];
         } else {
-          globalSharedMemos[index] = result;
+          globalSharedMemos[index]['location'] = result['location'];
+          globalSharedMemos[index]['memo'] = result['memo'];
+          globalSharedMemos[index]['color'] = result['color'];
+          globalSharedMemos[index]['latitude'] = result['latitude'];
+          globalSharedMemos[index]['longitude'] = result['longitude'];
         }
       });
     }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapmoa/home/home_screen.dart';
-import 'package:mapmoa/home/map_page.dart';
-import 'package:mapmoa/home/memo_page.dart';
+import 'package:mapmoa/map/map_page.dart';
+import 'package:mapmoa/schedule/memo_page.dart';
 import 'package:mapmoa/community/community_page.dart';
 import 'package:mapmoa/mypage/mypage_screen.dart';
 
