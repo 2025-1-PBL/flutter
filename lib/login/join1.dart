@@ -84,63 +84,66 @@ class _JoinScreenState extends State<JoinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      body: Column(
+      body: Stack(
         children: [
-          CustomTopBar(
-            title: '약관동의',
-            onBack: () => Navigator.pop(context),
-          ),
-          Expanded(
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 30),
-                      const Text(
-                        '다양한 서비스 이용을 위해서 아래 이용약관과 개인정보의 수집/이용 동의, 개인정보 위탁에 대한 동의 및 개인정보 목적 외 이용에 대한 안내를 읽고 동의하시기 바랍니다.',
-                        style: TextStyle(fontSize: 16, color: Colors.black),
-                        textAlign: TextAlign.justify,
-                      ),
-                      const SizedBox(height: 30),
-                      _buildAgreementRow(
-                        value: allAgree,
-                        label: '모두 동의합니다',
-                        onChanged: _toggleAll,
-                      ),
-                      const Divider(thickness: 1),
-                      ...List.generate(terms.length, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _buildAgreementRow(
-                            value: agreements[index],
-                            label: terms[index],
-                            onChanged: (val) => _toggleOne(index, val),
-                            showTrailingIcon: true,
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 240),
-                      CustomNextButton(
-                        label: '동의하고 계속하기', // ✅ 변경된 부분
-                        enabled: _isRequiredAgreed(),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const Join2Screen(),
+          Column(
+            children: [
+              CustomTopBar(
+                title: '약관동의',
+                onBack: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 100), // 버튼 영역 확보
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 30),
+                        const Text(
+                          '다양한 서비스 이용을 위해서 아래 이용약관과 개인정보의 수집/이용 동의, 개인정보 위탁에 대한 동의 및 개인정보 목적 외 이용에 대한 안내를 읽고 동의하시기 바랍니다.',
+                          style: TextStyle(fontSize: 16, color: Colors.black),
+                          textAlign: TextAlign.justify,
+                        ),
+                        const SizedBox(height: 30),
+                        _buildAgreementRow(
+                          value: allAgree,
+                          label: '모두 동의합니다',
+                          onChanged: _toggleAll,
+                        ),
+                        const Divider(thickness: 1),
+                        ...List.generate(terms.length, (index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _buildAgreementRow(
+                              value: agreements[index],
+                              label: terms[index],
+                              onChanged: (val) => _toggleOne(index, val),
+                              showTrailingIcon: true,
                             ),
                           );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                        }),
+                      ],
+                    ),
                   ),
                 ),
               ),
+            ],
+          ),
+          Positioned(
+            bottom: 20,
+            left: 40,
+            right: 40,
+            child: CustomNextButton(
+              label: '동의하고 계속하기',
+              enabled: _isRequiredAgreed(),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Join2Screen()),
+                );
+              },
             ),
           ),
         ],

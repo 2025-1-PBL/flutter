@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
 import 'join1.dart';
-import 'find_id.dart';
+import 'find_email.dart';
 import 'find_password.dart';
+import 'snslogin.dart'; // 🔥 SNS 로그인 화면 import
 
 class LoginScreen extends StatefulWidget {
   final bool showResetPopup;
@@ -20,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // showResetPopup가 true이고, 아직 팝업을 띄운 적이 없다면
     if (widget.showResetPopup && !_hasShownPopup) {
       _hasShownPopup = true;
 
@@ -113,12 +113,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 아이디 입력
+                  // 이메일 입력
                   Container(
                     decoration: _inputBoxDecoration(),
                     child: TextField(
                       controller: idController,
-                      decoration: _inputDecoration('아이디를 입력하세요.'),
+                      decoration: _inputDecoration('이메일을 입력하세요.'),
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -154,9 +154,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 소셜 로그인 버튼
+                  // 소셜 로그인 버튼 → snslogin.dart 이동
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SnsLoginScreen()),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF316954),
                       elevation: 0,
@@ -212,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('아이디 찾기', style: TextStyle(color: labelColor)),
+                        child: const Text('이메일 찾기', style: TextStyle(color: labelColor)),
                       ),
                       TextButton(
                         onPressed: () {
@@ -235,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // 하단 회원가입
+            // 하단 회원가입 유도
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
