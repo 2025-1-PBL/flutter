@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
 import 'join1.dart'; // JoinScreen import
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SnsLoginScreen extends StatelessWidget {
   const SnsLoginScreen({super.key});
@@ -47,7 +50,17 @@ class SnsLoginScreen extends StatelessWidget {
                     text: '카카오 로그인',
                     textColor: Colors.black,
                     icon: Icons.chat_bubble_outline,
-                    onPressed: () {},
+                    onPressed: () async {
+                      final baseUrl = Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://127.0.0.1:8080';
+                      final authUrl = '$baseUrl/oauth2/authorization/kakao';
+                      if (await canLaunch(authUrl)) {
+                        await launch(authUrl);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('카카오 로그인 URL을 열 수 없습니다.')),
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(height: 10),
 
@@ -58,7 +71,11 @@ class SnsLoginScreen extends StatelessWidget {
                     textColor: Colors.black87,
                     icon: Icons.g_mobiledata,
                     border: Border.all(color: Colors.grey.shade300),
-                    onPressed: () {},
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('구글 소셜 로그인은 아직 구현되지 않았습니다.')),
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
 
@@ -68,7 +85,17 @@ class SnsLoginScreen extends StatelessWidget {
                     text: '네이버 로그인',
                     textColor: Colors.white,
                     icon: Icons.nat,
-                    onPressed: () {},
+                    onPressed: () async {
+                      final baseUrl = Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://127.0.0.1:8080';
+                      final authUrl = '$baseUrl/oauth2/authorization/naver';
+                      if (await canLaunch(authUrl)) {
+                        await launch(authUrl);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('네이버 로그인 URL을 열 수 없습니다.')),
+                        );
+                      }
+                    },
                   ),
 
                   const SizedBox(height: 16),

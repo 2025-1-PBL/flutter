@@ -20,6 +20,7 @@ dependencies:
   fluttertoast: ^8.2.4         # ✅ 토스트 메시지
   flutter_naver_map: ^1.3.1   # ✅ 네이버 지도 플러그인
   flutter_secure_storage: ^9.2.4
+  url_launcher: ^6.1.7
 
 dev_dependencies:
   flutter_test:
