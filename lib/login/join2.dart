@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_next_nav_bar.dart';
 import '../home/home_screen.dart';
+
+final Dio _dio = Dio();
+final String _registerUrl = 'http://127.0.0.1:8080/api/signup';
 
 class Join2Screen extends StatefulWidget {
   const Join2Screen({super.key});
@@ -131,15 +135,8 @@ class _Join2ScreenState extends State<Join2Screen> {
                   padding: const EdgeInsets.fromLTRB(40, 0, 40, 68),
                   child: CustomNextButton(
                     label: '회원가입 완료하기',
-                    enabled: isFormValid,
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HomeScreen(showSignupComplete: true),
-                        ),
-                      );
-                    },
+                    enabled: true,
+                    onPressed: _registerUser,
                   ),
                 ),
               ],
@@ -148,6 +145,47 @@ class _Join2ScreenState extends State<Join2Screen> {
         ],
       ),
     );
+  }
+
+  Future<void> _registerUser() async {
+    final email = _idController.text.trim();
+    final password = _pwController.text.trim();
+    final nickname = _nicknameController.text.trim();
+    final name = _nameController.text.trim();
+    final birth = _birthController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    final data = {
+      'email': email,
+      'password': password,
+      'nickname': nickname,
+      'name': name,
+      'birth': birth,
+      'phone': phone,
+    };
+
+    try {
+      final response = await _dio.post(
+        _registerUrl,
+        data: data,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // 회원가입 성공 시 홈 화면으로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen(showSignupComplete: true)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('회원가입에 실패했습니다: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류가 발생했습니다: $e')),
+      );
+    }
   }
 
   Widget _buildTextField(
