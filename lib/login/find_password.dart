@@ -19,7 +19,7 @@ class _FindPasswordScreenState extends State<FindPasswordScreen> {
   final TextEditingController codeController = TextEditingController();
 
   bool get isFormValid =>
-      idController.text.trim().isNotEmpty &&
+      (!isEmailTab || idController.text.trim().isNotEmpty) &&
           nameController.text.trim().isNotEmpty &&
           contactController.text.trim().isNotEmpty &&
           codeController.text.trim().isNotEmpty;
@@ -162,9 +162,9 @@ class _FindPasswordScreenState extends State<FindPasswordScreen> {
   Widget _buildNotice() {
     return const Text(
       '유의사항\n'
-          '① 14세 미만 가입 회원은 가입 시 입력한 어린이 정보로 아이디 찾기가 가능합니다.\n'
-          '② 휴면회원의 아이디 찾기도 가능하며, 휴면 해제 후 정상적 서비스 이용이 가능합니다.\n'
-          '③ 탈퇴한 계정의 아이디 찾기는 불가능합니다.',
+          '① 14세 미만 가입 회원은 가입 시 입력한 어린이 정보로 비밀번호 찾기가 가능합니다.\n'
+          '② 휴면회원의 비밀번호 찾기도 가능하며, 휴면 해제 후 정상적 서비스 이용이 가능합니다.\n'
+          '③ 탈퇴한 계정의 비밀번호 찾기는 불가능합니다.',
       style: TextStyle(fontSize: 14, color: Colors.black87),
     );
   }
@@ -187,7 +187,6 @@ class _FindPasswordScreenState extends State<FindPasswordScreen> {
       return;
     }
 
-    // ✅ 이동 처리
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ResetPasswordScreen()),
@@ -235,8 +234,11 @@ class _FindPasswordScreenState extends State<FindPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInputField('아이디', '6-12자 이내의 영문/숫자', idController),
-                  const SizedBox(height: 16),
+                  if (!isEmailTab)
+                    ...[
+                      _buildInputField('이메일', '6-12자 이내의 영문/숫자', idController),
+                      const SizedBox(height: 16),
+                    ],
                   _buildInputField('이름', '이름을 입력해 주세요.', nameController),
                   const SizedBox(height: 16),
                   _buildRowInputWithButton(

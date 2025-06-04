@@ -95,7 +95,11 @@ class _Join2ScreenState extends State<Join2Screen> {
                         const SizedBox(height: 15),
                         const Text('회원정보', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 5),
-                        _buildTextField('아이디*', _idController, hint: '6-12자 이내의 영문/숫자', showCheckButton: true),
+                        _buildTextField('이메일*', _idController, hint: '6-12자 이내의 영문/숫자', showCheckButton: true),
+                        const SizedBox(height: 5),
+                        _buildCheckboxTile('이메일 수신 동의', value: agreeEmail, onChanged: (val) {
+                          setState(() => agreeEmail = val ?? false);
+                        }),
                         const SizedBox(height: 5),
                         _buildTextField('비밀번호*', _pwController, hint: '8-16자 영문/숫자/특수문자 조합', obscureText: true),
                         const SizedBox(height: 5),
@@ -113,12 +117,6 @@ class _Join2ScreenState extends State<Join2Screen> {
                         _buildTextField('이름*', _nameController),
                         const SizedBox(height: 5),
                         _buildDatePickerField(label: '생년월일*', controller: _birthController),
-                        const SizedBox(height: 5),
-                        _buildTextField('이메일*', _emailController, hint: '이메일을 입력해 주세요'),
-                        const SizedBox(height: 5),
-                        _buildCheckboxTile('이메일 수신 동의', value: agreeEmail, onChanged: (val) {
-                          setState(() => agreeEmail = val ?? false);
-                        }),
                         const SizedBox(height: 5),
                         _buildTextField('휴대폰 번호*', _phoneController, hint: '휴대폰 번호를 입력해 주세요'),
                         const SizedBox(height: 5),

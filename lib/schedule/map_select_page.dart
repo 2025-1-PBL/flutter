@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
+import '../widgets/custom_top_nav_bar.dart';
+import '../widgets/custom_next_nav_bar.dart';
 
 class MapSelectPage extends StatefulWidget {
   const MapSelectPage({super.key});
@@ -47,12 +49,12 @@ class _MapSelectPageState extends State<MapSelectPage> {
 
   Future<String?> _getAddressFromCoords(double lat, double lng) async {
     final url = Uri.parse(
-        'https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc'
-            '?request=coordsToaddr'
-            '&coords=$lng,$lat'
-            '&sourcecrs=epsg:4326'
-            '&output=json'
-            '&orders=roadaddr,addr,admcode,legalcode'
+      'https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc'
+          '?request=coordsToaddr'
+          '&coords=$lng,$lat'
+          '&sourcecrs=epsg:4326'
+          '&output=json'
+          '&orders=roadaddr,addr,admcode,legalcode',
     );
 
     final response = await http.get(url, headers: {
@@ -69,7 +71,6 @@ class _MapSelectPageState extends State<MapSelectPage> {
           final region = result['region'];
           final area1 = region['area1']['name'];
           final area2 = region['area2']['name'];
-          final area3 = region['area3']['name'];
 
           final land = result['land'];
           final roadName = land['name'] ?? '';
@@ -110,67 +111,71 @@ class _MapSelectPageState extends State<MapSelectPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFA724), // 형 강조색
-        title: const Text(
-          '위치 선택',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 4,
-      ),
+      backgroundColor: const Color(0xFFF9FAFB),
       body: Stack(
         children: [
-          NaverMap(
-            onMapTapped: _onMapTap,
-            onMapReady: (controller) {
-              _mapController = controller;
-            },
-          ),
-          if (selectedLatLng != null)
-            Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+          Column(
+            children: [
+              CustomTopBar(
+                title: '위치 선택',
+                onBack: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    NaverMap(
+                      onMapTapped: _onMapTap,
+                      onMapReady: (controller) {
+                        _mapController = controller;
+                      },
+                    ),
+                    if (selectedLatLng != null)
+                      Positioned(
+                        top: 20,
+                        left: 20,
+                        right: 20,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4),
+                            ],
+                          ),
+                          child: Text(
+                            selectedAddress ??
+                                '주소를 불러오는 중... (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                child: Text(
-                  selectedAddress ?? '주소를 불러오는 중...' +
-                      ' (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
-                  style: const TextStyle(fontSize: 14),
-                ),
               ),
+            ],
+          ),
+          Positioned(
+            bottom: 20,
+            left: 40,
+            right: 40,
+            child: CustomNextButton(
+              label: '위치 선택 완료',
+              enabled: selectedLatLng != null,
+              onPressed: selectedLatLng != null
+                  ? () {
+                Navigator.pop(context, {
+                  'latitude': selectedLatLng!.latitude,
+                  'longitude': selectedLatLng!.longitude,
+                  'address': selectedAddress,
+                });
+              }
+                  : null,
             ),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: selectedLatLng != null
-            ? () {
-          Navigator.pop(context, {
-            'latitude': selectedLatLng!.latitude,
-            'longitude': selectedLatLng!.longitude,
-            'address': selectedAddress,
-          });
-        }
-            : null,
-        backgroundColor: selectedLatLng != null ? const Color(0xFFFFA724) : Colors.grey,
-        icon: const Icon(Icons.check),
-        label: const Text('위치 선택 완료'),
       ),
     );
   }

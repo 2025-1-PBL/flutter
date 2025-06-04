@@ -30,7 +30,7 @@ class PostDetailScreen extends StatelessWidget {
               ),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(40, 40, 40, 20),
+                  padding: const EdgeInsets.fromLTRB(40, 30, 40, 20),
                   children: [
                     // 좋아요/조회/북마크 박스
                     Container(
