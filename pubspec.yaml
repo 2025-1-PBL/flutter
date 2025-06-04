@@ -29,13 +29,15 @@ dev_dependencies:
 
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/logoo.png
+  android: true
+  ios: true
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/map.png
+    - assets/logoo.png
     - assets/location.png
     - assets/markers/blue.png
     - assets/markers/green.png
