@@ -46,7 +46,7 @@ class SoloWritePage extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: const EdgeInsets.only(top: 20, bottom: 100), //상단여백
       itemCount: memos.length,
       itemBuilder: (context, index) {
         final item = memos[index];
@@ -54,7 +54,7 @@ class SoloWritePage extends StatelessWidget {
         final iconColor = _stringToColor(item['color']);
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 6), //좌우여백
           child: GestureDetector(
             onTap: () => onMemoTap(index),
             child: Container(

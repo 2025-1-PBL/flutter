@@ -62,7 +62,7 @@ class _SharedWritePageState extends State<SharedWritePage> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: const EdgeInsets.only(top: 20, bottom: 100), //상단여백
       itemCount: widget.memos.length,
       itemBuilder: (context, index) {
         final item = widget.memos[index];
