@@ -75,7 +75,7 @@ class _SharedWritePageState extends State<SharedWritePage> {
         final Color iconColor = stringToColor(item['color']);
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 6), //가로여백, 좌우여백
           child: GestureDetector(
             onTap: () => widget.onMemoTap(index),
             child: Container(

@@ -3,6 +3,8 @@ List<Map<String, dynamic>> globalPersonalMemos = [
     'location': '5호선 광화문역 (서울특별시 종로구 세종대로 172)',
     'memo': '123',
     'color': 'red',
+    'latitude': 37.5665,
+    'longitude': 126.9780,
   },
   {
     'location': '카페 베네 (신촌점)',
