@@ -61,11 +61,11 @@ class EventListSheet extends StatelessWidget {
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   itemCount: globalEventList.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, __) => const SizedBox(height: 6), // ✅ 간격 6
                   itemBuilder: (context, index) {
                     final event = globalEventList[index];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0), // ✅ 간격 제거
                       child: Card(
                         color: const Color(0xFFBDC3C7),
                         shape: RoundedRectangleBorder(
