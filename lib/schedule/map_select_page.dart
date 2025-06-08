@@ -1,7 +1,9 @@
+// ... 생략된 import는 그대로 유지
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 
 class MapSelectPage extends StatefulWidget {
   const MapSelectPage({super.key});
@@ -30,6 +32,25 @@ class _MapSelectPageState extends State<MapSelectPage> {
     });
   }
 
+  Future<void> _moveToCurrentLocation() async {
+    final hasPermission = await Geolocator.checkPermission();
+    if (hasPermission == LocationPermission.denied) {
+      await Geolocator.requestPermission();
+    }
+
+    final position = await Geolocator.getCurrentPosition();
+    final currentLatLng = NLatLng(position.latitude, position.longitude);
+
+    if (_mapController != null) {
+      final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+        target: currentLatLng,
+        zoom: 15,
+      )..setAnimation();
+
+      await _mapController!.updateCamera(cameraUpdate);
+    }
+  }
+
   void _onMapTap(NPoint point, NLatLng latLng) async {
     setState(() {
       selectedLatLng = latLng;
@@ -52,8 +73,7 @@ class _MapSelectPageState extends State<MapSelectPage> {
             '&coords=$lng,$lat'
             '&sourcecrs=epsg:4326'
             '&output=json'
-            '&orders=roadaddr,addr,admcode,legalcode'
-    );
+            '&orders=roadaddr,addr,admcode,legalcode');
 
     final response = await http.get(url, headers: {
       'X-NCP-APIGW-API-KEY-ID': 'til8qbn0pj',
@@ -69,36 +89,39 @@ class _MapSelectPageState extends State<MapSelectPage> {
           final region = result['region'];
           final area1 = region['area1']['name'];
           final area2 = region['area2']['name'];
-          final area3 = region['area3']['name'];
-
-          final land = result['land'];
-          final roadName = land['name'] ?? '';
-          final number1 = land['number1'] ?? '';
-          final number2 = land['number2'] ?? '';
+          final roadName = result['land']['name'] ?? '';
+          final number1 = result['land']['number1'] ?? '';
+          final number2 = result['land']['number2'] ?? '';
           final fullNumber = number2 != '' ? '$number1-$number2' : number1;
+          final buildingName = result['land']['addition0']?['value'] ?? '';
 
-          final buildingName = land['addition0']?['value'] ?? '';
           final roadAddr = '$area1 $area2 $roadName $fullNumber';
-
-          return buildingName.isNotEmpty
-              ? '$buildingName ($roadAddr)'
-              : roadAddr;
+          return buildingName.isNotEmpty ? '$buildingName ($roadAddr)' : roadAddr;
         }
       }
 
       final fallback = results.firstWhere((r) => r['name'] == 'admcode', orElse: () => null);
       if (fallback != null) {
         final region = fallback['region'];
-        final area1 = region['area1']['name'];
-        final area2 = region['area2']['name'];
-        final area3 = region['area3']['name'];
-        return '$area1 $area2 $area3';
+        return '${region['area1']['name']} ${region['area2']['name']} ${region['area3']['name']}';
       }
     } else {
       debugPrint('API 호출 실패: ${response.statusCode}');
     }
 
     return null;
+  }
+
+  Future<void> _zoomIn() async {
+    if (_mapController != null) {
+      await _mapController!.updateCamera(NCameraUpdate.zoomIn());
+    }
+  }
+
+  Future<void> _zoomOut() async {
+    if (_mapController != null) {
+      await _mapController!.updateCamera(NCameraUpdate.zoomOut());
+    }
   }
 
   @override
@@ -111,14 +134,10 @@ class _MapSelectPageState extends State<MapSelectPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFA724), // 형 강조색
+        backgroundColor: const Color(0xFFFFA724),
         title: const Text(
           '위치 선택',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -133,6 +152,7 @@ class _MapSelectPageState extends State<MapSelectPage> {
             onMapTapped: _onMapTap,
             onMapReady: (controller) {
               _mapController = controller;
+              _moveToCurrentLocation();
             },
           ),
           if (selectedLatLng != null)
@@ -145,9 +165,7 @@ class _MapSelectPageState extends State<MapSelectPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
                 ),
                 child: Text(
                   selectedAddress ?? '주소를 불러오는 중...' +
@@ -156,6 +174,30 @@ class _MapSelectPageState extends State<MapSelectPage> {
                 ),
               ),
             ),
+          // ✅ 확대 버튼 - 좌측 하단
+          Positioned(
+            bottom: 90,
+            left: 20,
+            child: FloatingActionButton(
+              heroTag: 'zoom_in',
+              mini: true,
+              backgroundColor: Colors.white,
+              onPressed: _zoomIn,
+              child: const Icon(Icons.zoom_in, color: Colors.black),
+            ),
+          ),
+// ✅ 축소 버튼 - 확대 아래
+          Positioned(
+            bottom: 30,
+            left: 20,
+            child: FloatingActionButton(
+              heroTag: 'zoom_out',
+              mini: true,
+              backgroundColor: Colors.white,
+              onPressed: _zoomOut,
+              child: const Icon(Icons.zoom_out, color: Colors.black),
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

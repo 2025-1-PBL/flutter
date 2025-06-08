@@ -179,7 +179,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
                       readOnly: true,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        hintText: '장소를 입력하거나 선택하세요.',
+                        hintText: '장소를 선택하세요.',
                       ),
                     ),
                   ),
