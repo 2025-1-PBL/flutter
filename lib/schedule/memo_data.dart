@@ -19,6 +19,8 @@ List<Map<String, dynamic>> globalSharedMemos = [
     'memo': '같이 쇼핑하자',
     'color': 'green',
     'profileUrl': 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
+    'latitude': 37.5700,
+    'longitude': 126.9820,
   },
   {
     'location': '한강공원 (여의도)',

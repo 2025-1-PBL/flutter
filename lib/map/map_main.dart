@@ -9,6 +9,7 @@ import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
 import 'package:mapmoa/event/event_list_sheet.dart';
+import 'package:mapmoa/event/event_data.dart';
 
 class MapMainPage extends StatefulWidget {
   const MapMainPage({super.key});
@@ -30,21 +31,6 @@ class _MapMainPageState extends State<MapMainPage> {
   final Map<String, NOverlayImage> _markerIcons = {};
   NOverlayImage? _locationIcon;
   NOverlayImage? _eventIcon;
-
-  final List<Map<String, dynamic>> _dummyEvents = [
-    {
-      'title': 'BHC (비에이치씨)',
-      'description': 'New bhc 앱 첫 주문 프로모션!\n첫 주문 시 최대 6천원 할인 (bhc App)',
-      'latitude': 37.5665,
-      'longitude': 126.9780,
-    },
-    {
-      'title': 'OLIVE YOUNG (올리브영)',
-      'description': '신학기 페스티벌\n최대 60% 품목 할인',
-      'latitude': 37.5700,
-      'longitude': 126.9820,
-    },
-  ];
 
   @override
   void initState() {
@@ -159,6 +145,10 @@ class _MapMainPageState extends State<MapMainPage> {
             position: NLatLng(lat, lng),
             icon: icon,
           );
+          marker.setOnTapListener((_) {
+            final message = '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
+            _showSnackBar(message);
+          });
           await _mapController?.addOverlay(marker);
         }
       }
@@ -177,13 +167,17 @@ class _MapMainPageState extends State<MapMainPage> {
             position: NLatLng(lat, lng),
             icon: icon,
           );
+          marker.setOnTapListener((_) {
+            final message = '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
+            _showSnackBar(message);
+          });
           await _mapController?.addOverlay(marker);
         }
       }
     }
 
     if (_showEvents && _eventIcon != null) {
-      for (final event in _dummyEvents) {
+      for (final event in globalEventList) {
         final lat = event['latitude'];
         final lng = event['longitude'];
         if (lat is double && lng is double) {
@@ -194,32 +188,36 @@ class _MapMainPageState extends State<MapMainPage> {
           );
           marker.setOnTapListener((_) {
             final message = '[${event['title']}] ${event['description']}';
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: Colors.grey[900],
-                content: Center(
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                duration: const Duration(seconds: 3),
-              ),
-            );
+            _showSnackBar(message);
           });
           await _mapController?.addOverlay(marker);
         }
       }
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Colors.grey[900],
+        content: Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   void _updatePersonalMarkers(bool show) {
@@ -308,9 +306,7 @@ class _MapMainPageState extends State<MapMainPage> {
     if (!status.isGranted) {
       status = await Permission.location.request();
       if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('위치 권한이 필요합니다.')),
-        );
+        _showSnackBar('위치 권한이 필요합니다.');
         return;
       }
     }

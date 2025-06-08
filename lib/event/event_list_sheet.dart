@@ -1,28 +1,7 @@
 library event_list_sheet;
 
 import 'package:flutter/material.dart';
-
-/// ✅ 외부에서 불러올 수 있게 전역에 선언
-final List<Map<String, dynamic>> dummyEvents = [
-  {
-    'tag': 'bhc',
-    'logoUrl': 'https://example.com/bhc_logo.png',
-    'title': 'BHC (비에이치씨)',
-    'period': '25.03.15 ~ 25.04.10',
-    'description': 'New bhc 앱 첫 주문 프로모션!\n첫 주문 시 최대 6천원 할인 (bhc App)',
-    'latitude': 37.5665,
-    'longitude': 126.9780,
-  },
-  {
-    'tag': 'olive',
-    'logoUrl': 'https://example.com/oliveyoung_logo.png',
-    'title': 'OLIVE YOUNG (올리브영)',
-    'period': '25.03.01 ~ 25.03.31',
-    'description': '신학기 페스티벌\n최대 60% 품목 할인',
-    'latitude': 37.5700,
-    'longitude': 126.9820,
-  },
-];
+import 'event_data.dart'; // ✅ 전역 이벤트 데이터를 가져오기 위해 추가
 
 class EventListSheet extends StatelessWidget {
   final bool showEvents;
@@ -81,10 +60,10 @@ class EventListSheet extends StatelessWidget {
                 child: ListView.separated(
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 20),
-                  itemCount: dummyEvents.length,
+                  itemCount: globalEventList.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final event = dummyEvents[index];
+                    final event = globalEventList[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 6),
                       child: Card(
