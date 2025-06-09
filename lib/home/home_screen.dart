@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mapmoa/schedule/memo_data.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_main.dart';
@@ -12,14 +13,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> memos = [
-    '스타벅스 가서 아이스아메리카노랑 아...',
-    '롯데마트가서 이거랑 이거랑 이거 사...',
-    '약국에서 영양제 사고 물도 사기',
-    '택배 찾아오기',
-    '계란 사기',
-    '은행 가기',
-  ];
+  late List<Map<String, dynamic>> allMemos;
   final List<bool> _checked = [];
 
   final List<Map<String, dynamic>> posts = [
@@ -32,7 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _checked.addAll(List.generate(memos.length, (_) => false));
+
+    // 전역 메모 불러오기
+    final personalMemos = getPersonalMemos();
+    final sharedMemos = getSharedMemos();
+    allMemos = [...personalMemos, ...sharedMemos].reversed.toList();
+
+    _checked.addAll(List.generate(allMemos.length, (_) => false));
 
     if (widget.showSignupComplete) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -135,9 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: memos.length,
+              itemCount: allMemos.length,
               separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
+                final memoText = allMemos[index]['memo'] ?? '';
                 return SizedBox(
                   height: 36,
                   child: Row(
@@ -148,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: Text(
-                            memos[index],
+                            memoText,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 14),
                           ),
