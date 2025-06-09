@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    // 전역 메모 불러오기
     final personalMemos = getPersonalMemos();
     final sharedMemos = getSharedMemos();
     allMemos = [...personalMemos, ...sharedMemos].reversed.toList();
@@ -59,8 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: '회원가입', style: TextStyle(color: Color(0xFFFFA724), fontWeight: FontWeight.bold)),
-                      TextSpan(text: '이 되었습니다!', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      TextSpan(
+                          text: '회원가입',
+                          style: TextStyle(color: Color(0xFFFFA724), fontWeight: FontWeight.bold)),
+                      TextSpan(
+                          text: '이 되었습니다!',
+                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   style: TextStyle(fontSize: 18),
@@ -133,10 +136,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: ListView.separated(
+            child: allMemos.isEmpty
+                ? const Center(
+              child: Text(
+                '등록된 메모가 없습니다.',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            )
+                : ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: allMemos.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              separatorBuilder: (_, __) =>
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
                 final memoText = allMemos[index]['memo'] ?? '';
                 return SizedBox(
@@ -163,6 +174,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           setState(() {
                             _checked[index] = val ?? false;
                           });
+
+                          if (val == true) {
+                            Future.delayed(const Duration(seconds: 2), () {
+                              if (!mounted) return;
+                              if (index >= allMemos.length) return;
+                              setState(() {
+                                allMemos.removeAt(index);
+                                _checked.removeAt(index);
+                              });
+                            });
+                          }
                         },
                       ),
                     ],
