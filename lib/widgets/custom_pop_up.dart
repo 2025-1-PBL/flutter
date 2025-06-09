@@ -84,84 +84,9 @@ class LogoutPopup extends StatelessWidget {
   }
 }
 
-/// 일반 재사용 팝업
-class CustomPopup extends StatelessWidget {
-  final BuildContext rootContext;
-  final String title;
-  final Widget content;
-  final String leftButtonText;
-  final String rightButtonText;
-  final VoidCallback onLeftPressed;
-  final VoidCallback onRightPressed;
-
-  const CustomPopup({
-    super.key,
-    required this.rootContext,
-    required this.title,
-    required this.content,
-    required this.leftButtonText,
-    required this.rightButtonText,
-    required this.onLeftPressed,
-    required this.onRightPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 30),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 5),
-            content,
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onLeftPressed,
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: Text(leftButtonText, style: const TextStyle(color: Colors.black)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: onRightPressed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFA724),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: Text(rightButtonText, style: const TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// ✅ 문의하기 전용 팝업
+/// ✅ 문의하기 팝업
 class InquiryPopup extends StatelessWidget {
-  final BuildContext rootContext;
-
-  const InquiryPopup({super.key, required this.rootContext});
+  const InquiryPopup({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -188,6 +113,73 @@ class InquiryPopup extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.black54,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Clipboard.setData(const ClipboardData(text: 'abcd123@naver.com'));
+                      Navigator.of(context).pop();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('복사하기', style: TextStyle(color: Colors.black)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFA724),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('닫기', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ 가맹점 이벤트 추가 요청 팝업
+class StoreEventRequestPopup extends StatelessWidget {
+  const StoreEventRequestPopup({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '가맹점 이벤트 추가 요청은\n이메일을 통해 접수받고 있습니다.\n\n아래 이메일로\n요청 내용을 보내주시면 빠르게 검토하겠습니다.\n',
+              style: TextStyle(fontSize: 14, color: Colors.black54),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'abcd123@naver.com',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
               textAlign: TextAlign.center,
             ),
