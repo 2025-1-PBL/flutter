@@ -34,7 +34,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
         _image = image;
       });
 
-      globalUserProfileImage = image.path; // ✅ 경로 문자열만 저장
+      globalUserProfileImage.value = image.path; // ✅ 정상적으로 경로 저장
       await postUserProfileToDB(image.path);
     }
   }

@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:mapmoa/global/user_profile.dart'; // 전역 프로필 정보
+import 'package:mapmoa/mypage/my_info_edit_screen.dart'; // 정보 수정 화면
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_main.dart';
+
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -26,11 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-
     final personalMemos = getPersonalMemos();
     final sharedMemos = getSharedMemos();
     allMemos = [...personalMemos, ...sharedMemos].reversed.toList();
-
     _checked.addAll(List.generate(allMemos.length, (_) => false));
 
     if (widget.showSignupComplete) {
@@ -92,18 +94,41 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(top: 40, left: 40, right: 40, bottom: 16),
             child: Column(
               children: [
-                Column(
-                  children: const [
-                    CircleAvatar(
-                      radius: 42,
-                      backgroundColor: Color(0xFFE0E0E0),
-                      child: Icon(Icons.person, size: 40, color: Colors.white),
-                    ),
-                    SizedBox(height: 10),
-                    Text('심슨 님', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 4),
-                    Text('오늘은 3개의 일정이 있어요!', style: TextStyle(color: Colors.grey)),
-                  ],
+                GestureDetector(
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MyInfoEditScreen()),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      ValueListenableBuilder<String?>(
+                        valueListenable: globalUserProfileImage,
+                        builder: (context, imagePath, _) {
+                          return CircleAvatar(
+                            radius: 42,
+                            backgroundColor: const Color(0xFFE0E0E0),
+                            backgroundImage:
+                            imagePath != null ? FileImage(File(imagePath)) : null,
+                            child: imagePath == null
+                                ? const Icon(Icons.person, size: 40, color: Colors.white)
+                                : null,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      ValueListenableBuilder<String>(
+                        valueListenable: globalUserName,
+                        builder: (context, name, _) {
+                          return Text('$name 님',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                      const Text('오늘은 3개의 일정이 있어요!', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(height: boxHeight, child: _buildScheduleCard()),

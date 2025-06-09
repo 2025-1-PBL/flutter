@@ -1,4 +1,4 @@
-import 'dart:io'; // ✅ FileImage 사용을 위해 필요
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'my_info_edit_screen.dart';
 import 'terms_of_service_screen.dart';
@@ -83,15 +83,21 @@ class MyPageScreen extends StatelessWidget {
                   },
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: const Color(0xFFE0E0E0),
-                        backgroundImage: globalUserProfileImage != null
-                            ? FileImage(File(globalUserProfileImage!))
-                            : null,
-                        child: globalUserProfileImage == null
-                            ? const Icon(Icons.person, size: 40, color: Colors.white)
-                            : null,
+                      // ✅ ValueListenableBuilder 적용
+                      ValueListenableBuilder<String?>(
+                        valueListenable: globalUserProfileImage,
+                        builder: (context, profilePath, child) {
+                          return CircleAvatar(
+                            radius: 28,
+                            backgroundColor: const Color(0xFFE0E0E0),
+                            backgroundImage: profilePath != null
+                                ? FileImage(File(profilePath))
+                                : null,
+                            child: profilePath == null
+                                ? const Icon(Icons.person, size: 40, color: Colors.white)
+                                : null,
+                          );
+                        },
                       ),
                       const SizedBox(width: 12),
                       const Expanded(
@@ -112,7 +118,7 @@ class MyPageScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ✅ 공유 멤버 관리
+              // 공유 멤버 관리
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 height: 80,
@@ -152,7 +158,7 @@ class MyPageScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ✅ 설정 항목
+              // 설정 항목
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
