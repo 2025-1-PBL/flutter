@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
 import 'join1.dart';
-import 'find_id.dart';
+import 'find_email.dart';
 import 'find_password.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'snslogin.dart'; // 🔥 SNS 로그인 화면 import
 
 class LoginScreen extends StatefulWidget {
   final bool showResetPopup;
@@ -15,12 +19,57 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _hasShownPopup = false;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  Future<void> _login(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이메일과 패스워드를 입력해주세요.')),
+      );
+      return;
+    }
+    try {
+      final uri = Uri.parse('http://127.0.0.1:8080/api/authenticate');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': email, 'password': password}),
+      );
+      debugPrint("응답 상태 코드: ${response.statusCode}");
+      debugPrint("응답 바디: ${response.body}");
+
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final String accessToken = data['token'];
+        await _storage.write(key: 'accessToken', value: accessToken);
+
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        String msg = '로그인에 실패했습니다.';
+        try {
+          final Map<String, dynamic> err = jsonDecode(response.body);
+          msg = err['message'] ?? msg;
+        } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류 발생: $e')),
+      );
+    }
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // showResetPopup가 true이고, 아직 팝업을 띄운 적이 없다면
     if (widget.showResetPopup && !_hasShownPopup) {
       _hasShownPopup = true;
 
@@ -113,12 +162,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 아이디 입력
+                  // 이메일 입력
                   Container(
                     decoration: _inputBoxDecoration(),
                     child: TextField(
                       controller: idController,
-                      decoration: _inputDecoration('아이디를 입력하세요.'),
+                      decoration: _inputDecoration('이메일을 입력하세요.'),
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -154,9 +203,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 소셜 로그인 버튼
+                  // 소셜 로그인 버튼 → snslogin.dart 이동
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SnsLoginScreen()),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF316954),
                       elevation: 0,
@@ -175,10 +229,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   // 일반 로그인 버튼
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      );
+                      final email = idController.text.trim();
+                      final password = passwordController.text.trim();
+                      _login(email, password);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFA724),
@@ -212,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('아이디 찾기', style: TextStyle(color: labelColor)),
+                        child: const Text('이메일 찾기', style: TextStyle(color: labelColor)),
                       ),
                       TextButton(
                         onPressed: () {
@@ -235,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // 하단 회원가입
+            // 하단 회원가입 유도
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
