@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
-
+import '../widgets/custom_next_nav_bar.dart'; // CustomNextButton 쓰는 경우 이 import가 필요
 
 class MapSelectPage extends StatefulWidget {
   const MapSelectPage({super.key});
@@ -69,7 +69,6 @@ class _MapSelectPageState extends State<MapSelectPage> {
 
   Future<String?> _getAddressFromCoords(double lat, double lng) async {
     final url = Uri.parse(
-
         'https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc'
             '?request=coordsToaddr'
             '&coords=$lng,$lat'
@@ -137,7 +136,6 @@ class _MapSelectPageState extends State<MapSelectPage> {
     }
 
     return Scaffold(
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFA724),
         title: const Text(
@@ -171,10 +169,35 @@ class _MapSelectPageState extends State<MapSelectPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
-
+                ),
+                child: Text(
+                  selectedAddress ??
+                      '주소를 불러오는 중... (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
+                  style: const TextStyle(fontSize: 16),
                 ),
               ),
-            ],
+            ),
+          Positioned(
+            bottom: 90,
+            left: 20,
+            child: FloatingActionButton(
+              heroTag: 'zoom_in',
+              mini: true,
+              backgroundColor: Colors.white,
+              onPressed: _zoomIn,
+              child: const Icon(Icons.zoom_in, color: Colors.black),
+            ),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 20,
+            child: FloatingActionButton(
+              heroTag: 'zoom_out',
+              mini: true,
+              backgroundColor: Colors.white,
+              onPressed: _zoomOut,
+              child: const Icon(Icons.zoom_out, color: Colors.black),
+            ),
           ),
           Positioned(
             bottom: 20,
@@ -193,31 +216,6 @@ class _MapSelectPageState extends State<MapSelectPage> {
               }
                   : null,
             ),
-
-          // ✅ 확대 버튼 - 좌측 하단
-          Positioned(
-            bottom: 90,
-            left: 20,
-            child: FloatingActionButton(
-              heroTag: 'zoom_in',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _zoomIn,
-              child: const Icon(Icons.zoom_in, color: Colors.black),
-            ),
-          ),
-// ✅ 축소 버튼 - 확대 아래
-          Positioned(
-            bottom: 30,
-            left: 20,
-            child: FloatingActionButton(
-              heroTag: 'zoom_out',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _zoomOut,
-              child: const Icon(Icons.zoom_out, color: Colors.black),
-            ),
-
           ),
         ],
       ),
