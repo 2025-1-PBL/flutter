@@ -9,6 +9,7 @@ import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
 import 'package:mapmoa/event/event_list_sheet.dart';
+import 'package:mapmoa/event/event_data.dart';
 
 class MapMainPage extends StatefulWidget {
   const MapMainPage({super.key});
@@ -27,9 +28,9 @@ class _MapMainPageState extends State<MapMainPage> {
   NaverMapController? _mapController;
   NLatLng? _currentLocation;
 
-  // 커스텀 아이콘 저장용 맵 (색상 키: NOverlayImage)
   final Map<String, NOverlayImage> _markerIcons = {};
   NOverlayImage? _locationIcon;
+  NOverlayImage? _eventIcon;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _MapMainPageState extends State<MapMainPage> {
 
   Future<void> _loadAllMarkerIcons() async {
     _locationIcon = await _loadIconFromAsset('assets/location.png');
+    _eventIcon = await _loadIconFromAsset('assets/markers/event.png');
 
     final colorToAsset = {
       'blue': 'assets/markers/blue.png',
@@ -108,7 +110,6 @@ class _MapMainPageState extends State<MapMainPage> {
 
     final c = color is Color ? color : (color as MaterialColor).shade500;
 
-    // RGB 값 기준 간단 매핑 (필요시 조정 가능)
     if (c.red > 230 && c.green < 100 && c.blue < 100) return 'red';
     if (c.red < 100 && c.green < 100 && c.blue > 230) return 'blue';
     if (c.red < 100 && c.green > 180 && c.blue < 100) return 'green';
@@ -140,10 +141,14 @@ class _MapMainPageState extends State<MapMainPage> {
           final colorKey = _colorToKey(colorRaw);
           final icon = _markerIcons[colorKey] ?? _markerIcons['blue']!;
           final marker = NMarker(
-            id: 'personal-${memo['id']}',  // 여기서 'id'는 수정 불가 고유값이어야 함
+            id: 'personal-${memo['id']}',
             position: NLatLng(lat, lng),
             icon: icon,
           );
+          marker.setOnTapListener((_) {
+            final message = '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
+            _showSnackBar(message);
+          });
           await _mapController?.addOverlay(marker);
         }
       }
@@ -162,37 +167,57 @@ class _MapMainPageState extends State<MapMainPage> {
             position: NLatLng(lat, lng),
             icon: icon,
           );
+          marker.setOnTapListener((_) {
+            final message = '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
+            _showSnackBar(message);
+          });
           await _mapController?.addOverlay(marker);
         }
       }
     }
 
-    if (_showEvents) {
-      final dummyEvents = [
-        {
-          'title': 'BHC (비에이치씨)',
-          'latitude': 37.5665,
-          'longitude': 126.9780,
-        },
-        {
-          'title': 'OLIVE YOUNG (올리브영)',
-          'latitude': 37.5700,
-          'longitude': 126.9820,
-        },
-      ];
-
-      for (final event in dummyEvents) {
+    if (_showEvents && _eventIcon != null) {
+      for (final event in globalEventList) {
         final lat = event['latitude'];
         final lng = event['longitude'];
         if (lat is double && lng is double) {
           final marker = NMarker(
             id: 'event-${event['title'] ?? UniqueKey()}',
             position: NLatLng(lat, lng),
+            icon: _eventIcon!,
           );
+          marker.setOnTapListener((_) {
+            final message = '[${event['title']}] ${event['description']}';
+            _showSnackBar(message);
+          });
           await _mapController?.addOverlay(marker);
         }
       }
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Colors.grey[900],
+        content: Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   void _updatePersonalMarkers(bool show) {
@@ -270,7 +295,7 @@ class _MapMainPageState extends State<MapMainPage> {
         return SharedScheduleSheet(
           showMarkers: _showSharedMarkers,
           onToggleMarkers: _updateSharedMarkers,
-          onMemoTap: _goToLocation, // ✅ 추가된 콜백
+          onMemoTap: _goToLocation,
         );
       },
     );
@@ -281,9 +306,7 @@ class _MapMainPageState extends State<MapMainPage> {
     if (!status.isGranted) {
       status = await Permission.location.request();
       if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('위치 권한이 필요합니다.')),
-        );
+        _showSnackBar('위치 권한이 필요합니다.');
         return;
       }
     }
@@ -301,7 +324,6 @@ class _MapMainPageState extends State<MapMainPage> {
     )..setAnimation();
 
     await _mapController?.updateCamera(cameraUpdate);
-
     await _refreshAllMarkers();
   }
 
@@ -314,8 +336,7 @@ class _MapMainPageState extends State<MapMainPage> {
     )..setAnimation();
 
     await _mapController!.updateCamera(cameraUpdate);
-
-    await _refreshAllMarkers();  // 추가: 카메라 이동 후 마커 갱신
+    await _refreshAllMarkers();
 
     Navigator.of(context).pop();
   }

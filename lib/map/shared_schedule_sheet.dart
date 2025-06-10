@@ -41,7 +41,7 @@ class SharedScheduleSheet extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      '👥 공유 일정',
+                      '👥  공유 일정',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 10),

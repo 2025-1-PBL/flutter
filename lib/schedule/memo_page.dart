@@ -143,8 +143,9 @@ class _MemoPageState extends State<MemoPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        toolbarHeight: 80, //여기가 상단 수정
         leadingWidth: 0,
-        titleSpacing: 20,
+        titleSpacing: 30, //좌측
         title: Row(
           children: [
             const Icon(Icons.calendar_today, color: Colors.black, size: 24),
@@ -162,7 +163,7 @@ class _MemoPageState extends State<MemoPage> {
         centerTitle: false,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 10), //우측
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
