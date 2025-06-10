@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:mapmoa/global/user_profile.dart'; // 전역 프로필 정보
+import 'package:mapmoa/mypage/my_info_edit_screen.dart'; // 정보 수정 화면
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_main.dart';
@@ -13,20 +17,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> memos = [
-    '스타벅스 가서 아이스아메리카노랑 아...',
-    '롯데마트가서 이거랑 이거랑 이거 사...',
-    '약국에서 영양제 사고 물도 사기',
-    '택배 찾아오기',
-    '계란 사기',
-    '은행 가기',
-  ];
+  late List<Map<String, dynamic>> allMemos;
   final List<bool> _checked = [];
+
+  final List<Map<String, dynamic>> posts = [
+    {'title': '[스타벅스] 3월 한 달간 30% 할인', 'location': '가좌동', 'likes': 4},
+    {'title': '[올리브영] 새학기 학생들을 위한 20% 할인', 'location': '가좌동', 'likes': 3},
+    {'title': '[배스킨라빈스] 봄 시즌 아이스크림 할인', 'location': '가좌동', 'likes': 2},
+    {'title': '[OG버거] 개강 기념 블랙페퍼 버거 할인', 'location': '가좌동', 'likes': 1},
+  ];
 
   @override
   void initState() {
     super.initState();
-    _checked.addAll(List.generate(memos.length, (_) => false));
+    final personalMemos = getPersonalMemos();
+    final sharedMemos = getSharedMemos();
+    allMemos = [...personalMemos, ...sharedMemos].reversed.toList();
+    _checked.addAll(List.generate(allMemos.length, (_) => false));
 
     if (widget.showSignupComplete) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,8 +60,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: '회원가입', style: TextStyle(color: Color(0xFFFFA724), fontWeight: FontWeight.bold)),
-                      TextSpan(text: '이 되었습니다!', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      TextSpan(
+                          text: '회원가입',
+                          style: TextStyle(color: Color(0xFFFFA724), fontWeight: FontWeight.bold)),
+                      TextSpan(
+                          text: '이 되었습니다!',
+                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   style: TextStyle(fontSize: 18),
@@ -83,39 +94,41 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(top: 40, left: 40, right: 40, bottom: 16),
             child: Column(
               children: [
-                // 프로필
-                Column(
-                  children: [
-                    Stack(
-                      children: [
-                        const CircleAvatar(
-                          radius: 42,
-                          backgroundColor: Color(0xFFE0E0E0),
-                          child: Icon(Icons.person, size: 40, color: Colors.white),
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            width: 20,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: Color(0xFFFFCC00),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Center(
-                              child: Text('3', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('심슨 님', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    const Text('오늘은 3개의 일정이 있어요!', style: TextStyle(color: Colors.grey)),
-                  ],
+                GestureDetector(
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MyInfoEditScreen()),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      ValueListenableBuilder<String?>(
+                        valueListenable: globalUserProfileImage,
+                        builder: (context, imagePath, _) {
+                          return CircleAvatar(
+                            radius: 42,
+                            backgroundColor: const Color(0xFFE0E0E0),
+                            backgroundImage:
+                            imagePath != null ? FileImage(File(imagePath)) : null,
+                            child: imagePath == null
+                                ? const Icon(Icons.person, size: 40, color: Colors.white)
+                                : null,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      ValueListenableBuilder<String>(
+                        valueListenable: globalUserName,
+                        builder: (context, name, _) {
+                          return Text('$name 님',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                      const Text('오늘은 3개의 일정이 있어요!', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(height: boxHeight, child: _buildScheduleCard()),
@@ -138,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           GestureDetector(
-            onTap: () {
-              // TODO: 메모 페이지로 이동
-            },
+            onTap: () {},
             child: Container(
               height: 28,
               decoration: const BoxDecoration(
@@ -150,11 +161,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: ListView.separated(
+            child: allMemos.isEmpty
+                ? const Center(
+              child: Text(
+                '등록된 메모가 없습니다.',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            )
+                : ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: memos.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              itemCount: allMemos.length,
+              separatorBuilder: (_, __) =>
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
+                final memoText = allMemos[index]['memo'] ?? '';
                 return SizedBox(
                   height: 36,
                   child: Row(
@@ -165,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: Text(
-                            memos[index],
+                            memoText,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 14),
                           ),
@@ -179,6 +199,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           setState(() {
                             _checked[index] = val ?? false;
                           });
+
+                          if (val == true) {
+                            Future.delayed(const Duration(seconds: 2), () {
+                              if (!mounted) return;
+                              if (index >= allMemos.length) return;
+                              setState(() {
+                                allMemos.removeAt(index);
+                                _checked.removeAt(index);
+                              });
+                            });
+                          }
                         },
                       ),
                     ],
@@ -223,31 +254,31 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: _boxDecoration(),
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: ListView.builder(
-          itemCount: 6,
+          itemCount: posts.length,
           physics: const BouncingScrollPhysics(),
           itemBuilder: (context, index) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SizedBox( //ㅇ
+            child: SizedBox(
               height: 20,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: const [
-                  Icon(Icons.favorite, color: Color(0xFFFF9900), size: 20),
-                  SizedBox(width: 5),
-                  Text('34', style: TextStyle(fontSize: 14)),
-                  SizedBox(width: 5),
-                  Icon(Icons.location_on, color: Color(0xFF4CAF50), size: 18),
-                  SizedBox(width: 5),
-                  Text('가좌동', style: TextStyle(fontSize: 14)),
-                  SizedBox(width: 5),
+                children: [
+                  const Icon(Icons.favorite, color: Color(0xFFFF9900), size: 20),
+                  const SizedBox(width: 5),
+                  Text('${posts[index]['likes']}', style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 5),
+                  const Icon(Icons.location_on, color: Color(0xFF4CAF50), size: 18),
+                  const SizedBox(width: 5),
+                  Text(posts[index]['location'], style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 5),
                   Expanded(
                     child: Text(
-                      '올리브영 할인 레전드 ---',
+                      posts[index]['title'],
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ),
-                  Icon(Icons.more_vert, size: 20)
+                  const Icon(Icons.more_vert, size: 20)
                 ],
               ),
             ),

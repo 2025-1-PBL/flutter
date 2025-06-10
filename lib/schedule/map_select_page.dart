@@ -5,6 +5,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
+
 class MapSelectPage extends StatefulWidget {
   const MapSelectPage({super.key});
 
@@ -68,6 +69,7 @@ class _MapSelectPageState extends State<MapSelectPage> {
 
   Future<String?> _getAddressFromCoords(double lat, double lng) async {
     final url = Uri.parse(
+
         'https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc'
             '?request=coordsToaddr'
             '&coords=$lng,$lat'
@@ -89,9 +91,11 @@ class _MapSelectPageState extends State<MapSelectPage> {
           final region = result['region'];
           final area1 = region['area1']['name'];
           final area2 = region['area2']['name'];
+
           final roadName = result['land']['name'] ?? '';
           final number1 = result['land']['number1'] ?? '';
           final number2 = result['land']['number2'] ?? '';
+
           final fullNumber = number2 != '' ? '$number1-$number2' : number1;
           final buildingName = result['land']['addition0']?['value'] ?? '';
 
@@ -133,6 +137,7 @@ class _MapSelectPageState extends State<MapSelectPage> {
     }
 
     return Scaffold(
+
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFA724),
         title: const Text(
@@ -166,14 +171,29 @@ class _MapSelectPageState extends State<MapSelectPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
-                ),
-                child: Text(
-                  selectedAddress ?? '주소를 불러오는 중...' +
-                      ' (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
-                  style: const TextStyle(fontSize: 14),
+
                 ),
               ),
+            ],
+          ),
+          Positioned(
+            bottom: 20,
+            left: 40,
+            right: 40,
+            child: CustomNextButton(
+              label: '위치 선택 완료',
+              enabled: selectedLatLng != null,
+              onPressed: selectedLatLng != null
+                  ? () {
+                Navigator.pop(context, {
+                  'latitude': selectedLatLng!.latitude,
+                  'longitude': selectedLatLng!.longitude,
+                  'address': selectedAddress,
+                });
+              }
+                  : null,
             ),
+
           // ✅ 확대 버튼 - 좌측 하단
           Positioned(
             bottom: 90,
@@ -197,22 +217,9 @@ class _MapSelectPageState extends State<MapSelectPage> {
               onPressed: _zoomOut,
               child: const Icon(Icons.zoom_out, color: Colors.black),
             ),
+
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: selectedLatLng != null
-            ? () {
-          Navigator.pop(context, {
-            'latitude': selectedLatLng!.latitude,
-            'longitude': selectedLatLng!.longitude,
-            'address': selectedAddress,
-          });
-        }
-            : null,
-        backgroundColor: selectedLatLng != null ? const Color(0xFFFFA724) : Colors.grey,
-        icon: const Icon(Icons.check),
-        label: const Text('위치 선택 완료'),
       ),
     );
   }

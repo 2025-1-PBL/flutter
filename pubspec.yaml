@@ -19,23 +19,27 @@ dependencies:
   http_parser: ^4.0.2          # ✅ MIME 설정용
   fluttertoast: ^8.2.4         # ✅ 토스트 메시지
   flutter_naver_map: ^1.3.1   # ✅ 네이버 지도 플러그인
+  flutter_secure_storage: ^9.2.4
+  url_launcher: ^6.1.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
 
-  flutter_native_splash: ^2.0.1+1
+  flutter_native_splash: ^2.3.5
 
 flutter_native_splash:
-  color: "#FFA724"
-  image: assets/logoo.png
+  color: "#FFFFFF"
+  android: true
+  ios: true
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/map.png
+    - assets/logoo.png
     - assets/location.png
     - assets/markers/blue.png
     - assets/markers/green.png

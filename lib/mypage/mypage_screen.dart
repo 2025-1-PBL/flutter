@@ -1,10 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'my_info_edit_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'member_manage_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
-import '../widgets/custom_pop_up.dart'; // ✅ InquiryPopup 사용을 위한 import 추가
+import '../widgets/custom_pop_up.dart';
+import 'package:mapmoa/global/user_profile.dart';
 
 class MyPageScreen extends StatelessWidget {
   const MyPageScreen({super.key});
@@ -57,7 +59,7 @@ class MyPageScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 80),
 
-              // ✅ 프로필 카드
+              // 프로필 카드
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 decoration: BoxDecoration(
@@ -80,10 +82,24 @@ class MyPageScreen extends StatelessWidget {
                     );
                   },
                   child: Row(
-                    children: const [
-                      Icon(Icons.account_circle, size: 56, color: Colors.grey),
-                      SizedBox(width: 12),
-                      Expanded(
+                    children: [
+                      ValueListenableBuilder<String?>(
+                        valueListenable: globalUserProfileImage,
+                        builder: (context, profilePath, child) {
+                          return CircleAvatar(
+                            radius: 28,
+                            backgroundColor: const Color(0xFFE0E0E0),
+                            backgroundImage: profilePath != null
+                                ? FileImage(File(profilePath))
+                                : null,
+                            child: profilePath == null
+                                ? const Icon(Icons.person, size: 40, color: Colors.white)
+                                : null,
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
                         child: Text(
                           '심슨 님',
                           style: TextStyle(
@@ -93,14 +109,15 @@ class MyPageScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: Colors.grey),
+                      const Icon(Icons.chevron_right, color: Colors.grey),
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
-              // ✅ 공유 멤버 관리
+              // 공유 멤버 관리
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 height: 80,
@@ -137,9 +154,10 @@ class MyPageScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
-              // ✅ 설정 항목
+              // 설정 항목 박스
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -175,14 +193,47 @@ class MyPageScreen extends StatelessWidget {
                           MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
                         );
                       },
+                      isLast: true, // ✅ 선 제거
                     ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 22), // ✅ 위 섹션과 간격 확보
+
+              // 문의 및 이벤트 요청 박스
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2B1D1D).withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
                     buildTile(
                       icon: Icons.search,
                       title: '문의하기',
                       onTap: () {
                         showDialog(
                           context: context,
-                          builder: (_) => InquiryPopup(rootContext: context),
+                          builder: (_) => const InquiryPopup(),
+                        );
+                      },
+                    ),
+                    buildTile(
+                      icon: Icons.send,
+                      title: '가맹점 이벤트 추가 요청',
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => const StoreEventRequestPopup(),
                         );
                       },
                       isLast: true,

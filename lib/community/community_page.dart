@@ -234,7 +234,7 @@ class _CommunityPageState extends State<CommunityPage> {
   Widget _buildHorizontalCardList() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: SizedBox(
-      height: 350,
+      height: 360,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
