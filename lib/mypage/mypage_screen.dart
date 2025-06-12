@@ -99,15 +99,20 @@ class MyPageScreen extends StatelessWidget {
                         },
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          '심슨 님',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF767676),
-                          ),
-                        ),
+                      ValueListenableBuilder<String>(
+                        valueListenable: globalUserName,
+                        builder: (context, name, _) {
+                          return Expanded(
+                            child: Text(
+                              '${name.isNotEmpty ? name : '사용자'} 님',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF767676),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const Icon(Icons.chevron_right, color: Colors.grey),
                     ],
@@ -193,13 +198,13 @@ class MyPageScreen extends StatelessWidget {
                           MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
                         );
                       },
-                      isLast: true, // ✅ 선 제거
+                      isLast: true,
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 22), // ✅ 위 섹션과 간격 확보
+              const SizedBox(height: 22),
 
               // 문의 및 이벤트 요청 박스
               Container(

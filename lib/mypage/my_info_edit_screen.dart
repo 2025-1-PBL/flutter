@@ -72,118 +72,127 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
-        CustomTopBar(
-        title: '내 정보 수정',
-        onBack: () => Navigator.pop(context),
-      ),
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.center,
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundColor: const Color(0xFFE0E0E0),
-                      backgroundImage: _image != null
-                          ? FileImage(File(_image!.path))
-                          : null,
-                      child: _image == null
-                          ? const Icon(Icons.person, size: 50, color: Colors.white)
-                          : null,
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: getUserProfileFromLibrary,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFFFA724),
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          child: const Icon(Icons.edit, size: 16, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2B1D1D).withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildItem(context, '닉네임', trailing: '심슨'),
-                    _buildItem(context, '이메일 변경'),
-                    _buildItem(context, '비밀번호 변경', isLast: true),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          CustomTopBar(
+            title: '내 정보 수정',
+            onBack: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const WithdrawScreen()),
-                      );
-                    },
-                    child: const Text('계정탈퇴', style: TextStyle(color: Colors.grey)),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('|', style: TextStyle(color: Colors.grey)),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (ctx) => LogoutPopup(
-                          rootContext: context,
-                          message: '로그아웃 하시겠습니까?',
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.center,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: const Color(0xFFE0E0E0),
+                          backgroundImage: _image != null
+                              ? FileImage(File(_image!.path))
+                              : null,
+                          child: _image == null
+                              ? const Icon(Icons.person, size: 50, color: Colors.white)
+                              : null,
                         ),
-                      );
-                    },
-                    child: const Text('로그아웃', style: TextStyle(color: Colors.grey)),
+                        Positioned(
+                          bottom: 0,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: getUserProfileFromLibrary,
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFFA724),
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 30),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2B1D1D).withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        ValueListenableBuilder(
+                          valueListenable: globalUserName,
+                          builder: (context, value, _) {
+                            return _buildItem(
+                              context,
+                              '닉네임',
+                              trailing: value.isNotEmpty ? value : '닉네임 없음',
+                            );
+                          },
+                        ),
+                        _buildItem(context, '이메일 변경'),
+                        _buildItem(context, '비밀번호 변경', isLast: true),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const WithdrawScreen()),
+                          );
+                        },
+                        child: const Text('계정탈퇴', style: TextStyle(color: Colors.grey)),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('|', style: TextStyle(color: Colors.grey)),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (ctx) => LogoutPopup(
+                              rootContext: context,
+                              message: '로그아웃 하시겠습니까?',
+                            ),
+                          );
+                        },
+                        child: const Text('로그아웃', style: TextStyle(color: Colors.grey)),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
-      ],
-    ),
-    floatingActionButton: _image != null
-    ? FloatingActionButton.extended(
-    onPressed: () {
-    Navigator.pop(context); // 저장 후 마이페이지로 이동
-    },
-    label: const Text('저장'),
-    icon: const Icon(Icons.check),
-    backgroundColor: const Color(0xFFFFA724),
-    )
-    : null,
+      floatingActionButton: _image != null
+          ? FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.pop(context); // 저장 후 마이페이지로 이동
+        },
+        label: const Text('저장'),
+        icon: const Icon(Icons.check),
+        backgroundColor: const Color(0xFFFFA724),
+      )
+          : null,
     );
   }
 
