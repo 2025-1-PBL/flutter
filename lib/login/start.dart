@@ -4,6 +4,7 @@ import 'join1.dart';
 import 'find_email.dart';
 import 'find_password.dart';
 import 'dart:convert';
+import '../api/auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'snslogin.dart'; // 🔥 SNS 로그인 화면 import
@@ -19,50 +20,30 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _hasShownPopup = false;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final _authService = AuthService();
 
   Future<void> _login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이메일과 패스워드를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일과 패스워드를 입력해주세요.')));
       return;
     }
+
     try {
-      final uri = Uri.parse('http://ocb.iptime.org/api/authenticate');
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': email, 'password': password}),
+      await _authService.login(email, password);
+
+      // 로그인 성공 시 홈 화면으로 이동
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
-      debugPrint("응답 상태 코드: ${response.statusCode}");
-      debugPrint("응답 바디: ${response.body}");
-
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final String accessToken = data['token'];
-        await _storage.write(key: 'accessToken', value: accessToken);
-
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else {
-        String msg = '로그인에 실패했습니다.';
-        try {
-          final Map<String, dynamic> err = jsonDecode(response.body);
-          msg = err['message'] ?? msg;
-        } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
-      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류 발생: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('로그인에 실패했습니다: $e')));
     }
   }
 
