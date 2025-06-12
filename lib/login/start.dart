@@ -29,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     try {
-      final uri = Uri.parse('http://127.0.0.1:8080/api/authenticate');
+      final uri = Uri.parse('http://ocb.iptime.org/api/authenticate');
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
