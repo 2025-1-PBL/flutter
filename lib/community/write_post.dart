@@ -26,7 +26,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
 
   bool get isFormValid =>
       _titleController.text.trim().isNotEmpty &&
-          _contentController.text.trim().isNotEmpty;
+      _contentController.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -44,9 +44,10 @@ class _WritePostScreenState extends State<WritePostScreen> {
 
     if (selectedImages.isNotEmpty) {
       setState(() {
-        final newImages = selectedImages
-            .where((img) => !_images.any((exist) => exist.path == img.path))
-            .toList();
+        final newImages =
+            selectedImages
+                .where((img) => !_images.any((exist) => exist.path == img.path))
+                .toList();
         _images.addAll(newImages);
         if (_images.length > 10) {
           _images = _images.sublist(0, 10);
@@ -81,10 +82,10 @@ class _WritePostScreenState extends State<WritePostScreen> {
         throw Exception('로그인이 필요합니다.');
       }
 
-      await _articleService.createArticle(
-        title: _titleController.text,
-        content: _contentController.text,
-      );
+      await _articleService.createArticle({
+        'title': _titleController.text,
+        'content': _contentController.text,
+      });
 
       if (!mounted) return;
       Navigator.pop(context, true); // 성공 시 true 반환
@@ -137,43 +138,41 @@ class _WritePostScreenState extends State<WritePostScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      hintText: '제목을 입력하세요',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        hintText: '제목을 입력하세요',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                    const Divider(height: 32),
+                    TextField(
+                      controller: _contentController,
+                      decoration: const InputDecoration(
+                        hintText: '내용을 입력하세요',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      style: const TextStyle(fontSize: 16, height: 1.5),
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
                     ),
-                  ),
-                  const Divider(height: 32),
-                  TextField(
-                    controller: _contentController,
-                    decoration: const InputDecoration(
-                      hintText: '내용을 입력하세요',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                    ),
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
     );
   }
 

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mapmoa/schedule/solo_write.dart';
-import 'package:mapmoa/schedule/memo_write_page.dart';
+import 'package:mapmoa/schedule/schedule_list.dart';
+import 'package:mapmoa/schedule/schedule_write_page.dart';
 import 'package:mapmoa/widgets/custom_bottom_nav_bar.dart';
 import 'package:mapmoa/api/schedule_service.dart';
 import 'package:mapmoa/api/auth_service.dart';
 
-class MemoPage extends StatefulWidget {
-  const MemoPage({super.key});
+class SchedulePage extends StatefulWidget {
+  const SchedulePage({super.key});
 
   @override
-  State<MemoPage> createState() => _MemoPageState();
+  State<SchedulePage> createState() => _SchedulePageState();
 }
 
-class _MemoPageState extends State<MemoPage> {
+class _SchedulePageState extends State<SchedulePage> {
   bool isPersonalSelected = true;
   bool isSelecting = false;
   Set<int> selectedIndexes = {};
@@ -32,17 +32,23 @@ class _MemoPageState extends State<MemoPage> {
   Future<void> _loadSchedules() async {
     try {
       setState(() => _isLoading = true);
-      
+
       final currentUser = await _authService.getCurrentUser();
       if (currentUser == null) {
         throw Exception('사용자 정보를 가져올 수 없습니다.');
       }
 
-      final schedules = await _scheduleService.getAllSchedulesByUser(currentUser['id']);
-      
+      final schedules = await _scheduleService.getAllSchedulesByUser(
+        currentUser['id'],
+      );
+
       setState(() {
-        _personalSchedules = schedules.where((schedule) => !schedule['isShared']).toList();
-        _sharedSchedules = schedules.where((schedule) => schedule['isShared']).toList();
+        _personalSchedules = List<Map<String, dynamic>>.from(
+          schedules.where((schedule) => !schedule['isShared']).toList(),
+        );
+        _sharedSchedules = List<Map<String, dynamic>>.from(
+          schedules.where((schedule) => schedule['isShared']).toList(),
+        );
         _isLoading = false;
       });
     } catch (e) {
@@ -67,7 +73,7 @@ class _MemoPageState extends State<MemoPage> {
   Future<void> _addNewSchedule() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const MemoWritePage()),
+      MaterialPageRoute(builder: (_) => const ScheduleWritePage()),
     );
     if (result != null) {
       await _loadSchedules();
@@ -86,21 +92,24 @@ class _MemoPageState extends State<MemoPage> {
       return;
     }
 
-    final currentSchedule = isPersonalSelected ? _personalSchedules[index] : _sharedSchedules[index];
+    final currentSchedule =
+        isPersonalSelected
+            ? _personalSchedules[index]
+            : _sharedSchedules[index];
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MemoWritePage(
-          initialData: {
-            'id': currentSchedule['id'],
-            'location': currentSchedule['title'],
-            'memo': currentSchedule['description'],
-            'color': currentSchedule['color'],
-            'latitude': currentSchedule['location']['latitude'],
-            'longitude': currentSchedule['location']['longitude'],
-          },
-        ),
+        builder:
+            (_) => ScheduleWritePage(
+              initialData: {
+                'id': currentSchedule['id'],
+                'title': currentSchedule['title'],
+                'description': currentSchedule['description'],
+                'color': currentSchedule['color'],
+                'location': currentSchedule['location'],
+              },
+            ),
       ),
     );
 
@@ -123,10 +132,11 @@ class _MemoPageState extends State<MemoPage> {
         throw Exception('사용자 정보를 가져올 수 없습니다.');
       }
 
-      final memosToDelete = isPersonalSelected ? _personalMemos : _sharedMemos;
+      final schedulesToDelete =
+          isPersonalSelected ? _personalSchedules : _sharedSchedules;
       for (final index in selectedIndexes) {
         await _scheduleService.deleteSchedule(
-          memosToDelete[index]['id'],
+          schedulesToDelete[index]['id'],
           currentUser['id'],
         );
       }
@@ -136,7 +146,7 @@ class _MemoPageState extends State<MemoPage> {
         selectedIndexes.clear();
       });
 
-      await _loadSchedules(); // 일정 목록 새로고침
+      await _loadSchedules();
       _showToast("선택한 일정이 삭제되었습니다!");
     } catch (e) {
       _showToast('일정 삭제에 실패했습니다: $e');
@@ -150,10 +160,11 @@ class _MemoPageState extends State<MemoPage> {
         throw Exception('사용자 정보를 가져올 수 없습니다.');
       }
 
-      final memosToDelete = isPersonalSelected ? _personalMemos : _sharedMemos;
-      for (final memo in memosToDelete) {
+      final schedulesToDelete =
+          isPersonalSelected ? _personalSchedules : _sharedSchedules;
+      for (final schedule in schedulesToDelete) {
         await _scheduleService.deleteSchedule(
-          memo['id'],
+          schedule['id'],
           currentUser['id'],
         );
       }
@@ -163,7 +174,7 @@ class _MemoPageState extends State<MemoPage> {
         selectedIndexes.clear();
       });
 
-      await _loadSchedules(); // 일정 목록 새로고침
+      await _loadSchedules();
       _showToast("모든 일정이 삭제되었습니다!");
     } catch (e) {
       _showToast('일정 삭제에 실패했습니다: $e');
@@ -172,7 +183,8 @@ class _MemoPageState extends State<MemoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final memos = isPersonalSelected ? _personalMemos : _sharedMemos;
+    final schedules =
+        isPersonalSelected ? _personalSchedules : _sharedSchedules;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -219,70 +231,71 @@ class _MemoPageState extends State<MemoPage> {
                       _deleteAll();
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'delete_selected',
-                      child: Center(child: Text('삭제하기')),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete_all',
-                      child: Center(child: Text('모두삭제')),
-                    ),
-                  ],
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(
+                          value: 'delete_selected',
+                          child: Center(child: Text('삭제하기')),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete_all',
+                          child: Center(child: Text('모두삭제')),
+                        ),
+                      ],
                 ),
               ],
             ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GestureDetector(
-              onTap: () {
-                if (isSelecting) {
-                  setState(() {
-                    isSelecting = false;
-                    selectedIndexes.clear();
-                  });
-                }
-              },
-              child: isPersonalSelected
-                  ? SoloWritePage(
-                      memos: _personalMemos,
-                      onMemoTap: _editMemo,
-                      isSelecting: isSelecting,
-                      selectedIndexes: selectedIndexes,
-                    )
-                  : SharedWritePage(
-                      memos: _sharedMemos,
-                      onMemoTap: _editMemo,
-                      isSelecting: isSelecting,
-                      selectedIndexes: selectedIndexes,
-                    ),
-            ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : GestureDetector(
+                onTap: () {
+                  if (isSelecting) {
+                    setState(() {
+                      isSelecting = false;
+                      selectedIndexes.clear();
+                    });
+                  }
+                },
+                child: ScheduleListPage(
+                  schedules: schedules,
+                  onScheduleTap: _editSchedule,
+                  isSelecting: isSelecting,
+                  selectedIndexes: selectedIndexes,
+                ),
+              ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       floatingActionButton: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        child: isSelecting
-            ? Padding(
-                padding: const EdgeInsets.only(bottom: 24, right: 16),
-                child: FloatingActionButton.extended(
-                  onPressed: selectedIndexes.isEmpty ? null : _deleteSelected,
-                  backgroundColor:
-                      selectedIndexes.isEmpty ? Colors.grey : const Color(0xFFFFA724),
-                  label: const Text('삭제', style: TextStyle(color: Colors.white)),
-                  icon: const Icon(Icons.delete, color: Colors.white),
+        child:
+            isSelecting
+                ? Padding(
+                  padding: const EdgeInsets.only(bottom: 24, right: 16),
+                  child: FloatingActionButton.extended(
+                    onPressed: selectedIndexes.isEmpty ? null : _deleteSelected,
+                    backgroundColor:
+                        selectedIndexes.isEmpty
+                            ? Colors.grey
+                            : const Color(0xFFFFA724),
+                    label: const Text(
+                      '삭제',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    icon: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                )
+                : Padding(
+                  padding: const EdgeInsets.only(bottom: 24, right: 16),
+                  child: FloatingActionButton(
+                    onPressed: _addNewSchedule,
+                    backgroundColor: Colors.white,
+                    shape: const CircleBorder(),
+                    child: const Icon(Icons.edit, color: Color(0xFFFFA724)),
+                  ),
                 ),
-              )
-            : Padding(
-                padding: const EdgeInsets.only(bottom: 24, right: 16),
-                child: FloatingActionButton(
-                  onPressed: _addNewMemo,
-                  backgroundColor: Colors.white,
-                  shape: const CircleBorder(),
-                  child: const Icon(Icons.edit, color: Color(0xFFFFA724)),
-                ),
-              ),
       ),
     );
   }

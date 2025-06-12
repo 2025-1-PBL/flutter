@@ -39,9 +39,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Future<void> _loadComments() async {
     try {
       setState(() => _isLoading = true);
-      final comments = await _commentService.getCommentsByArticleId(widget.article['id']);
+      final comments = await _commentService.getArticleComments(
+        widget.article['id'],
+      );
       setState(() {
-        _comments = comments;
+        _comments = List<Map<String, dynamic>>.from(comments['content'] ?? []);
         _isLoading = false;
       });
     } catch (e) {
@@ -52,19 +54,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _toggleLike() async {
     try {
-      if (_isLiked) {
-        await _articleService.unlikeArticle(widget.article['id']);
-        setState(() {
-          _isLiked = false;
-          _likeCount--;
-        });
-      } else {
-        await _articleService.likeArticle(widget.article['id']);
-        setState(() {
-          _isLiked = true;
-          _likeCount++;
-        });
-      }
+      await _articleService.likeArticle(widget.article['id']);
+      setState(() {
+        _isLiked = !_isLiked;
+        _likeCount += _isLiked ? 1 : -1;
+      });
     } catch (e) {
       _showSnackBar('좋아요 처리에 실패했습니다: $e');
     }
@@ -75,10 +69,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     try {
       setState(() => _isLoading = true);
-      await _commentService.createComment(
-        articleId: widget.article['id'],
-        content: _commentController.text,
-      );
+      await _commentService.createArticleComment(widget.article['id'], {
+        'content': _commentController.text,
+      }, (await _authService.getCurrentUser())!['id']);
       _commentController.clear();
       await _loadComments();
     } catch (e) {
@@ -90,7 +83,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _deleteComment(int commentId) async {
     try {
-      await _commentService.deleteComment(commentId);
+      await _commentService.deleteArticleComment(
+        commentId,
+        (await _authService.getCurrentUser())!['id'],
+      );
       await _loadComments();
     } catch (e) {
       _showSnackBar('댓글 삭제에 실패했습니다: $e');
@@ -99,10 +95,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -127,198 +120,224 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      // 작성자 정보
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.grey[200],
-                            backgroundImage: widget.article['author']?['profileImage'] != null
-                                ? NetworkImage(widget.article['author']['profileImage'])
-                                : null,
-                            child: widget.article['author']?['profileImage'] == null
-                                ? const Icon(Icons.person, color: Colors.grey)
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.article['author']?['name'] ?? '익명',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        // 작성자 정보
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey[200],
+                              backgroundImage:
+                                  widget.article['author']?['profileImage'] !=
+                                          null
+                                      ? NetworkImage(
+                                        widget
+                                            .article['author']['profileImage'],
+                                      )
+                                      : null,
+                              child:
+                                  widget.article['author']?['profileImage'] ==
+                                          null
+                                      ? const Icon(
+                                        Icons.person,
+                                        color: Colors.grey,
+                                      )
+                                      : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.article['author']?['name'] ?? '익명',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  _formatDate(widget.article['createdAt']),
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
+                                  Text(
+                                    _formatDate(widget.article['createdAt']),
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // 게시글 내용
+                        Text(
+                          widget.article['title'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.article['content'] ?? '',
+                          style: const TextStyle(fontSize: 16, height: 1.5),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // 좋아요 버튼
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: _toggleLike,
+                              icon: Icon(
+                                _isLiked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color:
+                                    _isLiked
+                                        ? const Color(0xFFFFA724)
+                                        : Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              '$_likeCount',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 32),
+
+                        // 댓글 목록
+                        const Text(
+                          '댓글',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ..._comments.map(
+                          (comment) => _buildCommentItem(comment),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 댓글 입력
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _commentController,
+                            decoration: const InputDecoration(
+                              hintText: '댓글을 입력하세요',
+                              border: InputBorder.none,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 게시글 내용
-                      Text(
-                        widget.article['title'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        widget.article['content'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 좋아요 버튼
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: _toggleLike,
-                            icon: Icon(
-                              _isLiked ? Icons.favorite : Icons.favorite_border,
-                              color: _isLiked ? const Color(0xFFFFA724) : Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            '$_likeCount',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 32),
-
-                      // 댓글 목록
-                      const Text(
-                        '댓글',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ..._comments.map((comment) => _buildCommentItem(comment)),
-                    ],
-                  ),
-                ),
-
-                // 댓글 입력
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _commentController,
-                          decoration: const InputDecoration(
-                            hintText: '댓글을 입력하세요',
-                            border: InputBorder.none,
+                        IconButton(
+                          onPressed: _isLoading ? null : _addComment,
+                          icon: const Icon(
+                            Icons.send,
+                            color: Color(0xFFFFA724),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: _isLoading ? null : _addComment,
-                        icon: const Icon(Icons.send, color: Color(0xFFFFA724)),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
     );
   }
 
   Widget _buildCommentItem(Map<String, dynamic> comment) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Colors.grey[200],
-            backgroundImage: comment['author']?['profileImage'] != null
-                ? NetworkImage(comment['author']['profileImage'])
-                : null,
-            child: comment['author']?['profileImage'] == null
-                ? const Icon(Icons.person, color: Colors.grey, size: 16)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _authService.getCurrentUser(),
+      builder: (context, snapshot) {
+        final currentUser = snapshot.data;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.grey[200],
+                backgroundImage:
+                    comment['author']?['profileImage'] != null
+                        ? NetworkImage(comment['author']['profileImage'])
+                        : null,
+                child:
+                    comment['author']?['profileImage'] == null
+                        ? const Icon(Icons.person, color: Colors.grey, size: 16)
+                        : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      comment['author']?['name'] ?? '익명',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          comment['author']?['name'] ?? '익명',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(comment['createdAt']),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(height: 4),
                     Text(
-                      _formatDate(comment['createdAt']),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                      comment['content'] ?? '',
+                      style: const TextStyle(fontSize: 14),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  comment['content'] ?? '',
-                  style: const TextStyle(fontSize: 14),
+              ),
+              if (comment['author']?['id'] == currentUser?['id'])
+                IconButton(
+                  onPressed: () => _deleteComment(comment['id']),
+                  icon: const Icon(Icons.delete_outline, size: 16),
+                  color: Colors.grey,
                 ),
-              ],
-            ),
+            ],
           ),
-          if (comment['author']?['id'] == _authService.getCurrentUser()?['id'])
-            IconButton(
-              onPressed: () => _deleteComment(comment['id']),
-              icon: const Icon(Icons.delete_outline, size: 16),
-              color: Colors.grey,
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 

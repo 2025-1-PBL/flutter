@@ -7,8 +7,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
-import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:mapmoa/api/schedule_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
 import 'package:mapmoa/event/event_list_sheet.dart';
+import 'package:mapmoa/api/shared_schedule_service.dart';
 
 class MapMainPage extends StatefulWidget {
   const MapMainPage({super.key});
@@ -18,6 +20,11 @@ class MapMainPage extends StatefulWidget {
 }
 
 class _MapMainPageState extends State<MapMainPage> {
+  final _scheduleService = ScheduleService();
+  final _sharedScheduleService = SharedScheduleService();
+  final _authService = AuthService();
+  List<Map<String, dynamic>> _personalSchedules = [];
+  List<Map<String, dynamic>> _sharedSchedules = [];
   bool _isInitialized = false;
   bool _isMenuOpen = false;
   bool _showPersonalMarkers = false;
@@ -37,6 +44,27 @@ class _MapMainPageState extends State<MapMainPage> {
     _initializeNaverMap();
     _loadAllMarkerIcons();
     _checkPermissionAndGetLocation();
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) return;
+
+      final personalSchedules = await _scheduleService.getAllSchedulesByUser(
+        currentUser['id'],
+      );
+      final sharedSchedules = await _sharedScheduleService
+          .getSharedSchedulesForUser(currentUser['id']);
+
+      setState(() {
+        _personalSchedules = List<Map<String, dynamic>>.from(personalSchedules);
+        _sharedSchedules = List<Map<String, dynamic>>.from(sharedSchedules);
+      });
+    } catch (e) {
+      debugPrint('일정을 불러오는데 실패했습니다: $e');
+    }
   }
 
   Future<void> _initializeNaverMap() async {
@@ -78,7 +106,9 @@ class _MapMainPageState extends State<MapMainPage> {
       if (!status.isGranted) return;
     }
 
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
     setState(() {
       _currentLocation = NLatLng(position.latitude, position.longitude);
     });
@@ -132,48 +162,50 @@ class _MapMainPageState extends State<MapMainPage> {
     }
 
     if (_showPersonalMarkers) {
-      for (final memo in globalPersonalMemos) {
-        final lat = memo['latitude'];
-        final lng = memo['longitude'];
-        final colorRaw = memo['color'];
-        if (lat is double && lng is double) {
-          final colorKey = _colorToKey(colorRaw);
-          final icon = _markerIcons[colorKey] ?? _markerIcons['blue']!;
-          final marker = NMarker(
-            id: 'personal-${memo['id']}',  // 여기서 'id'는 수정 불가 고유값이어야 함
-            position: NLatLng(lat, lng),
-            icon: icon,
-          );
-          await _mapController?.addOverlay(marker);
+      for (final schedule in _personalSchedules) {
+        final location = schedule['location'];
+        if (location != null) {
+          final lat = location['latitude'];
+          final lng = location['longitude'];
+          final colorRaw = schedule['color'];
+          if (lat is double && lng is double) {
+            final colorKey = _colorToKey(colorRaw);
+            final icon = _markerIcons[colorKey] ?? _markerIcons['blue']!;
+            final marker = NMarker(
+              id: 'personal-${schedule['id']}',
+              position: NLatLng(lat, lng),
+              icon: icon,
+            );
+            await _mapController?.addOverlay(marker);
+          }
         }
       }
     }
 
     if (_showSharedMarkers) {
-      for (final memo in globalSharedMemos) {
-        final lat = memo['latitude'];
-        final lng = memo['longitude'];
-        final colorRaw = memo['color'];
-        if (lat is double && lng is double) {
-          final colorKey = _colorToKey(colorRaw);
-          final icon = _markerIcons[colorKey] ?? _markerIcons['blue']!;
-          final marker = NMarker(
-            id: 'shared-${memo['location'] ?? UniqueKey()}',
-            position: NLatLng(lat, lng),
-            icon: icon,
-          );
-          await _mapController?.addOverlay(marker);
+      for (final schedule in _sharedSchedules) {
+        final location = schedule['location'];
+        if (location != null) {
+          final lat = location['latitude'];
+          final lng = location['longitude'];
+          final colorRaw = schedule['color'];
+          if (lat is double && lng is double) {
+            final colorKey = _colorToKey(colorRaw);
+            final icon = _markerIcons[colorKey] ?? _markerIcons['blue']!;
+            final marker = NMarker(
+              id: 'shared-${schedule['id']}',
+              position: NLatLng(lat, lng),
+              icon: icon,
+            );
+            await _mapController?.addOverlay(marker);
+          }
         }
       }
     }
 
     if (_showEvents) {
       final dummyEvents = [
-        {
-          'title': 'BHC (비에이치씨)',
-          'latitude': 37.5665,
-          'longitude': 126.9780,
-        },
+        {'title': 'BHC (비에이치씨)', 'latitude': 37.5665, 'longitude': 126.9780},
         {
           'title': 'OLIVE YOUNG (올리브영)',
           'latitude': 37.5700,
@@ -281,24 +313,24 @@ class _MapMainPageState extends State<MapMainPage> {
     if (!status.isGranted) {
       status = await Permission.location.request();
       if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('위치 권한이 필요합니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('위치 권한이 필요합니다.')));
         return;
       }
     }
 
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
     final latLng = NLatLng(position.latitude, position.longitude);
 
     setState(() {
       _currentLocation = latLng;
     });
 
-    final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
-      target: latLng,
-      zoom: 15,
-    )..setAnimation();
+    final cameraUpdate = NCameraUpdate.scrollAndZoomTo(target: latLng, zoom: 15)
+      ..setAnimation();
 
     await _mapController?.updateCamera(cameraUpdate);
 
@@ -315,7 +347,7 @@ class _MapMainPageState extends State<MapMainPage> {
 
     await _mapController!.updateCamera(cameraUpdate);
 
-    await _refreshAllMarkers();  // 추가: 카메라 이동 후 마커 갱신
+    await _refreshAllMarkers(); // 추가: 카메라 이동 후 마커 갱신
 
     Navigator.of(context).pop();
   }
@@ -323,9 +355,7 @@ class _MapMainPageState extends State<MapMainPage> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(

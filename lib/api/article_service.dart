@@ -60,7 +60,10 @@ class ArticleService {
   }
 
   // 게시글 수정
-  Future<dynamic> updateArticle(int articleId, Map<String, dynamic> articleData) async {
+  Future<dynamic> updateArticle(
+    int articleId,
+    Map<String, dynamic> articleData,
+  ) async {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
@@ -102,7 +105,11 @@ class ArticleService {
   }
 
   // 주변 게시글 찾기
-  Future<List<dynamic>> findArticlesNearby(double latitude, double longitude, double radius) async {
+  Future<List<dynamic>> findArticlesNearby(
+    double latitude,
+    double longitude,
+    double radius,
+  ) async {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
@@ -119,6 +126,4 @@ class ArticleService {
       throw Exception('주변 게시글을 불러오는데 실패했습니다: $e');
     }
   }
-
 }
-

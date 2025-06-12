@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapmoa/home/home_screen.dart';
 import 'package:mapmoa/map/map_page.dart';
-import 'package:mapmoa/schedule/memo_page.dart';
+import 'package:mapmoa/schedule/schedule_page.dart';
 import 'package:mapmoa/community/community_page.dart';
 import 'package:mapmoa/mypage/mypage_screen.dart';
 
@@ -15,7 +15,11 @@ class CustomBottomNavBar extends StatelessWidget {
     final List<Map<String, dynamic>> navItems = [
       {'icon': Icons.home, 'label': '홈', 'page': const HomeScreen()},
       {'icon': Icons.map, 'label': '지도', 'page': const MapPage()},
-      {'icon': Icons.calendar_today, 'label': '일정', 'page': const MemoPage()},
+      {
+        'icon': Icons.calendar_today,
+        'label': '일정',
+        'page': const SchedulePage(),
+      },
       {'icon': Icons.group, 'label': '커뮤니티', 'page': const CommunityPage()},
       {'icon': Icons.person, 'label': 'MY', 'page': const MyPageScreen()},
     ];
@@ -36,7 +40,8 @@ class CustomBottomNavBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(navItems.length, (index) {
           final isSelected = index == currentIndex;
-          final color = isSelected ? const Color(0xFFFFA724) : const Color(0xFFBDBDBD);
+          final color =
+              isSelected ? const Color(0xFFFFA724) : const Color(0xFFBDBDBD);
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -46,7 +51,9 @@ class CustomBottomNavBar extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   PageRouteBuilder(
-                    pageBuilder: (context, animation1, animation2) => navItems[index]['page'],
+                    pageBuilder:
+                        (context, animation1, animation2) =>
+                            navItems[index]['page'],
                     transitionDuration: Duration.zero,
                     reverseTransitionDuration: Duration.zero,
                   ),
@@ -68,10 +75,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     ),
                     Text(
                       navItems[index]['label'],
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: color,
-                      ),
+                      style: TextStyle(fontSize: 12, color: color),
                     ),
                     const SizedBox(height: 20),
                   ],

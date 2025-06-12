@@ -1,24 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:mapmoa/schedule/solo_write.dart';
-import 'package:mapmoa/schedule/memo_data.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart'; // NLatLng 타입 사용 위해 import
+import 'package:mapmoa/schedule/schedule_list.dart';
+import 'package:mapmoa/api/schedule_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 
-class PersonalScheduleSheet extends StatelessWidget {
+class PersonalScheduleSheet extends StatefulWidget {
   final bool showMarkers;
   final Function(bool) onToggleMarkers;
-  final Function(NLatLng) onMemoTap;  // 추가: 위치 전달 콜백
+  final Function(NLatLng) onMemoTap;
 
   const PersonalScheduleSheet({
     super.key,
     required this.showMarkers,
     required this.onToggleMarkers,
-    required this.onMemoTap,  // 필수 파라미터로 추가
+    required this.onMemoTap,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final personalMemos = getPersonalMemos();
+  State<PersonalScheduleSheet> createState() => _PersonalScheduleSheetState();
+}
 
+class _PersonalScheduleSheetState extends State<PersonalScheduleSheet> {
+  final _scheduleService = ScheduleService();
+  final _authService = AuthService();
+  List<Map<String, dynamic>> _schedules = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) return;
+
+      final schedules = await _scheduleService.getAllSchedulesByUser(
+        currentUser['id'],
+      );
+      setState(() {
+        _schedules = List<Map<String, dynamic>>.from(schedules);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint('일정을 불러오는데 실패했습니다: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.3,
@@ -42,14 +75,17 @@ class PersonalScheduleSheet extends StatelessWidget {
                   children: [
                     const Text(
                       '👤 개인 일정',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Transform.scale(
                       scale: 0.9,
                       child: Switch(
-                        value: showMarkers,
-                        onChanged: onToggleMarkers,
+                        value: widget.showMarkers,
+                        onChanged: widget.onToggleMarkers,
                         activeColor: const Color(0xFFFFA724),
                       ),
                     ),
@@ -58,19 +94,26 @@ class PersonalScheduleSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: SoloWritePage(
-                  memos: personalMemos,
-                  onMemoTap: (index) {
-                    final memo = personalMemos[index];
-                    // 좌표와 색상 로그 찍기 (디버그)
-                    debugPrint('Tapped memo: lat=${memo['latitude']}, lng=${memo['longitude']}, color=${memo['color']}');
-                    if (memo['latitude'] is double && memo['longitude'] is double) {
-                      onMemoTap(NLatLng(memo['latitude'], memo['longitude']));
-                    }
-                  },
-                  isSelecting: false,
-                  selectedIndexes: {},
-                ),
+                child:
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ScheduleListPage(
+                          schedules: _schedules,
+                          onScheduleTap: (index) {
+                            final schedule = _schedules[index];
+                            if (schedule['location'] != null) {
+                              final location = schedule['location'];
+                              widget.onMemoTap(
+                                NLatLng(
+                                  location['latitude'],
+                                  location['longitude'],
+                                ),
+                              );
+                            }
+                          },
+                          isSelecting: false,
+                          selectedIndexes: {},
+                        ),
               ),
             ],
           ),

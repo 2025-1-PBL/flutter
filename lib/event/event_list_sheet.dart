@@ -31,7 +31,7 @@ class _EventListSheetState extends State<EventListSheet> {
       setState(() => _isLoading = true);
       final events = await _brandService.getAllBrands();
       setState(() {
-        _events = events;
+        _events = List<Map<String, dynamic>>.from(events);
         _isLoading = false;
       });
     } catch (e) {
@@ -42,10 +42,7 @@ class _EventListSheetState extends State<EventListSheet> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -77,7 +74,10 @@ class _EventListSheetState extends State<EventListSheet> {
                   children: [
                     const Text(
                       '🎫 이벤트 목록',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Transform.scale(
@@ -93,89 +93,98 @@ class _EventListSheetState extends State<EventListSheet> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : RefreshIndicator(
-                        onRefresh: _loadEvents,
-                        child: ListView.separated(
-                          controller: scrollController,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 20),
-                          itemCount: _events.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final event = _events[index];
-                            return Card(
-                              color: const Color(0xFFFFE680),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 2,
-                              shadowColor: Colors.orangeAccent.withOpacity(0.3),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.network(
-                                        event['logoUrl'] ?? '',
-                                        width: 70,
-                                        height: 70,
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (_, __, ___) => Container(
+                child:
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : RefreshIndicator(
+                          onRefresh: _loadEvents,
+                          child: ListView.separated(
+                            controller: scrollController,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 20,
+                            ),
+                            itemCount: _events.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              final event = _events[index];
+                              return Card(
+                                color: const Color(0xFFFFE680),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 2,
+                                shadowColor: Colors.orangeAccent.withOpacity(
+                                  0.3,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(
+                                          event['logoUrl'] ?? '',
                                           width: 70,
                                           height: 70,
-                                          color: Colors.grey[300],
-                                          child: const Icon(
-                                              Icons.image_not_supported, size: 40),
+                                          fit: BoxFit.contain,
+                                          errorBuilder:
+                                              (_, __, ___) => Container(
+                                                width: 70,
+                                                height: 70,
+                                                color: Colors.grey[300],
+                                                child: const Icon(
+                                                  Icons.image_not_supported,
+                                                  size: 40,
+                                                ),
+                                              ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            event['name'] ?? '',
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 18,
-                                              color: Colors.black87,
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              event['name'] ?? '',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                    color: Colors.black87,
+                                                  ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${_formatDate(event['startDate'])} ~ ${_formatDate(event['endDate'])}',
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: Colors.grey[700],
-                                              fontWeight: FontWeight.w600,
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${_formatDate(event['startDate'])} ~ ${_formatDate(event['endDate'])}',
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.grey[700],
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            event['description'] ?? '',
-                                            style: theme.textTheme.bodyMedium
-                                                ?.copyWith(
-                                              fontSize: 15,
-                                              height: 1.4,
-                                              color: Colors.black87,
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              event['description'] ?? '',
+                                              style: theme.textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                    fontSize: 15,
+                                                    height: 1.4,
+                                                    color: Colors.black87,
+                                                  ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
               ),
             ],
           ),
