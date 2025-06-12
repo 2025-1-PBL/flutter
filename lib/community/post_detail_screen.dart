@@ -54,7 +54,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _toggleLike() async {
     try {
-      await _articleService.likeArticle(widget.article['id']);
+      if (_isLiked) {
+        await _articleService.dislikeArticle(widget.article['id']);
+      } else {
+        await _articleService.likeArticle(widget.article['id']);
+      }
       setState(() {
         _isLiked = !_isLiked;
         _likeCount += _isLiked ? 1 : -1;
@@ -69,9 +73,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     try {
       setState(() => _isLoading = true);
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('로그인이 필요합니다.');
+      }
       await _commentService.createArticleComment(widget.article['id'], {
         'content': _commentController.text,
-      }, (await _authService.getCurrentUser())!['id']);
+      }, currentUser['id']);
       _commentController.clear();
       await _loadComments();
     } catch (e) {
@@ -83,10 +91,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _deleteComment(int commentId) async {
     try {
-      await _commentService.deleteArticleComment(
-        commentId,
-        (await _authService.getCurrentUser())!['id'],
-      );
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('로그인이 필요합니다.');
+      }
+      await _commentService.deleteArticleComment(commentId, currentUser['id']);
       await _loadComments();
     } catch (e) {
       _showSnackBar('댓글 삭제에 실패했습니다: $e');

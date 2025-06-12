@@ -21,8 +21,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
   List<XFile> _images = [];
-
-  String? _selectedAddress; // 위치 주소 저장 변수
+  String? _selectedAddress;
 
   bool get isFormValid =>
       _titleController.text.trim().isNotEmpty &&
@@ -85,10 +84,12 @@ class _WritePostScreenState extends State<WritePostScreen> {
       await _articleService.createArticle({
         'title': _titleController.text,
         'content': _contentController.text,
+        'authorId': currentUser['id'],
+        if (_selectedAddress != null) 'location': _selectedAddress,
       });
 
       if (!mounted) return;
-      Navigator.pop(context, true); // 성공 시 true 반환
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

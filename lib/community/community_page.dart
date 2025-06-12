@@ -36,7 +36,8 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       if (!_isLoading && _hasMore) {
         _loadMoreArticles();
       }
@@ -46,11 +47,14 @@ class _CommunityPageState extends State<CommunityPage> {
   Future<void> _loadArticles() async {
     try {
       setState(() => _isLoading = true);
-      final articles = await _articleService.getAllArticles(page: 0, size: _pageSize);
+      final response = await _articleService.getAllArticles(
+        page: 0,
+        size: _pageSize,
+      );
       setState(() {
-        _articles = articles;
+        _articles = List<Map<String, dynamic>>.from(response['content'] ?? []);
         _currentPage = 0;
-        _hasMore = articles.length == _pageSize;
+        _hasMore = _articles.length == _pageSize;
         _isLoading = false;
       });
     } catch (e) {
@@ -65,12 +69,17 @@ class _CommunityPageState extends State<CommunityPage> {
     try {
       setState(() => _isLoading = true);
       final nextPage = _currentPage + 1;
-      final articles = await _articleService.getAllArticles(page: nextPage, size: _pageSize);
-      
+      final response = await _articleService.getAllArticles(
+        page: nextPage,
+        size: _pageSize,
+      );
+
       setState(() {
-        _articles.addAll(articles);
+        _articles.addAll(
+          List<Map<String, dynamic>>.from(response['content'] ?? []),
+        );
         _currentPage = nextPage;
-        _hasMore = articles.length == _pageSize;
+        _hasMore = _articles.length == _pageSize;
         _isLoading = false;
       });
     } catch (e) {
@@ -81,10 +90,7 @@ class _CommunityPageState extends State<CommunityPage> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -102,9 +108,7 @@ class _CommunityPageState extends State<CommunityPage> {
     final article = _articles[index];
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => PostDetailScreen(article: article),
-      ),
+      MaterialPageRoute(builder: (_) => PostDetailScreen(article: article)),
     );
     await _loadArticles(); // 댓글이나 좋아요가 변경되었을 수 있으므로 새로고침
   }
@@ -132,133 +136,153 @@ class _CommunityPageState extends State<CommunityPage> {
           ),
         ],
       ),
-      body: _isLoading && _articles.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadArticles,
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 100),
-                itemCount: _articles.length + (_hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == _articles.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
+      body:
+          _isLoading && _articles.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                onRefresh: _loadArticles,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(bottom: 100),
+                  itemCount: _articles.length + (_hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _articles.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    final article = _articles[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 6,
+                      ),
+                      child: GestureDetector(
+                        onTap: () => _viewPostDetail(index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF2B1D1D).withAlpha(13),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: Colors.grey[200],
+                                    backgroundImage:
+                                        article['author']?['profileImage'] !=
+                                                null
+                                            ? NetworkImage(
+                                              article['author']['profileImage'],
+                                            )
+                                            : null,
+                                    child:
+                                        article['author']?['profileImage'] ==
+                                                null
+                                            ? const Icon(
+                                              Icons.person,
+                                              color: Colors.grey,
+                                            )
+                                            : null,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          article['author']?['name'] ?? '익명',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Text(
+                                          _formatDate(article['createdAt']),
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                article['title'] ?? '',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                article['content'] ?? '',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.favorite,
+                                    color: Colors.grey[400],
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${article['likeCount'] ?? 0}',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Icon(
+                                    Icons.comment,
+                                    color: Colors.grey[400],
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${article['commentCount'] ?? 0}',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
-                  }
-
-                  final article = _articles[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                    child: GestureDetector(
-                      onTap: () => _viewPostDetail(index),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF2B1D1D).withAlpha(13),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: Colors.grey[200],
-                                  backgroundImage: article['author']?['profileImage'] != null
-                                      ? NetworkImage(article['author']['profileImage'])
-                                      : null,
-                                  child: article['author']?['profileImage'] == null
-                                      ? const Icon(Icons.person, color: Colors.grey)
-                                      : null,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        article['author']?['name'] ?? '익명',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatDate(article['createdAt']),
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              article['title'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              article['content'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(Icons.favorite,
-                                    color: Colors.grey[400], size: 16),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${article['likeCount'] ?? 0}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Icon(Icons.comment,
-                                    color: Colors.grey[400], size: 16),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${article['commentCount'] ?? 0}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  },
+                ),
               ),
-            ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewPost,

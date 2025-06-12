@@ -11,10 +11,7 @@ class AuthService {
     try {
       final response = await _dio.post(
         '$_baseUrl/authenticate',
-        data: {
-          'username': username,
-          'password': password,
-        },
+        data: {'username': username, 'password': password},
       );
 
       // 토큰 저장
@@ -32,10 +29,7 @@ class AuthService {
   // 회원가입
   Future<Map<String, dynamic>> signup(Map<String, dynamic> userData) async {
     try {
-      final response = await _dio.post(
-        '$_baseUrl/signup',
-        data: userData,
-      );
+      final response = await _dio.post('$_baseUrl/signup', data: userData);
       return response.data;
     } catch (e) {
       throw Exception('회원가입에 실패했습니다: $e');
@@ -52,9 +46,7 @@ class AuthService {
 
       final response = await _dio.post(
         '$_baseUrl/refresh',
-        data: {
-          'refreshToken': refreshToken,
-        },
+        data: {'refreshToken': refreshToken},
       );
 
       // 새로운 토큰 저장
