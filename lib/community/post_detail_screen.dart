@@ -74,9 +74,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       setState(() => _isLoading = true);
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('로그인이 필요합니다.');
-      }
       await _commentService.createArticleComment(widget.article['id'], {
         'content': _commentController.text,
       }, currentUser['id']);
@@ -92,9 +89,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Future<void> _deleteComment(int commentId) async {
     try {
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('로그인이 필요합니다.');
-      }
       await _commentService.deleteArticleComment(commentId, currentUser['id']);
       await _loadComments();
     } catch (e) {

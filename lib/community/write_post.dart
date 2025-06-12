@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../widgets/custom_top_nav_bar.dart';
-import '../schedule/map_select_page.dart';
 import 'package:mapmoa/api/article_service.dart';
 import 'package:mapmoa/api/auth_service.dart';
+import 'dart:io';
 
 class WritePostScreen extends StatefulWidget {
   const WritePostScreen({super.key});
@@ -77,10 +75,6 @@ class _WritePostScreenState extends State<WritePostScreen> {
       setState(() => _isLoading = true);
 
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('로그인이 필요합니다.');
-      }
-
       await _articleService.createArticle({
         'title': _titleController.text,
         'content': _contentController.text,
@@ -171,6 +165,60 @@ class _WritePostScreenState extends State<WritePostScreen> {
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                     ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: _pickImages,
+                          icon: const Icon(
+                            Icons.image,
+                            color: Color(0xFFFFA724),
+                          ),
+                        ),
+                        Text(
+                          '${_images.length}/10',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    if (_images.isNotEmpty)
+                      SizedBox(
+                        height: 100,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _images.length,
+                          itemBuilder: (context, index) {
+                            return Stack(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Image.file(
+                                    File(_images[index].path),
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _images.removeAt(index);
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),

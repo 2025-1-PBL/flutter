@@ -35,8 +35,6 @@ class _SharedScheduleSheetState extends State<SharedScheduleSheet> {
   Future<void> _loadSchedules() async {
     try {
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) return;
-
       final schedules = await _sharedScheduleService.getSharedSchedulesForUser(
         currentUser['id'],
       );

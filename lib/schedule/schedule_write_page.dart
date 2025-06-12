@@ -71,10 +71,6 @@ class _ScheduleWritePageState extends State<ScheduleWritePage> {
       setState(() => _isLoading = true);
 
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('사용자 정보를 가져올 수 없습니다.');
-      }
-
       final scheduleData = {
         'title': _titleController.text,
         'description': _descriptionController.text,

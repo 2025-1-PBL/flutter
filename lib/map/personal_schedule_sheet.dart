@@ -35,8 +35,6 @@ class _PersonalScheduleSheetState extends State<PersonalScheduleSheet> {
   Future<void> _loadSchedules() async {
     try {
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) return;
-
       final schedules = await _scheduleService.getAllSchedulesByUser(
         currentUser['id'],
       );

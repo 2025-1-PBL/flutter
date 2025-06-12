@@ -95,12 +95,22 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   Future<void> _addNewPost() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const WritePostScreen()),
-    );
-    if (result == true) {
-      await _loadArticles();
+    try {
+      // 현재 로그인한 사용자 정보 확인
+      await _authService.getCurrentUser();
+
+      if (!mounted) return;
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const WritePostScreen()),
+      );
+      if (result == true && mounted) {
+        await _loadArticles();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('로그인이 필요한 서비스입니다.');
     }
   }
 

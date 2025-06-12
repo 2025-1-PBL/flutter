@@ -34,10 +34,6 @@ class _SchedulePageState extends State<SchedulePage> {
       setState(() => _isLoading = true);
 
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('사용자 정보를 가져올 수 없습니다.');
-      }
-
       final schedules = await _scheduleService.getAllSchedulesByUser(
         currentUser['id'],
       );
@@ -128,10 +124,6 @@ class _SchedulePageState extends State<SchedulePage> {
   Future<void> _deleteSelected() async {
     try {
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('사용자 정보를 가져올 수 없습니다.');
-      }
-
       final schedulesToDelete =
           isPersonalSelected ? _personalSchedules : _sharedSchedules;
       for (final index in selectedIndexes) {
@@ -156,10 +148,6 @@ class _SchedulePageState extends State<SchedulePage> {
   Future<void> _deleteAll() async {
     try {
       final currentUser = await _authService.getCurrentUser();
-      if (currentUser == null) {
-        throw Exception('사용자 정보를 가져올 수 없습니다.');
-      }
-
       final schedulesToDelete =
           isPersonalSelected ? _personalSchedules : _sharedSchedules;
       for (final schedule in schedulesToDelete) {
