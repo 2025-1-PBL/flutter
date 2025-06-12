@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
-class SoloWritePage extends StatelessWidget {
-  final List<Map<String, dynamic>> memos;
-  final Function(int) onMemoTap;
+class ScheduleListPage extends StatelessWidget {
+  final List<Map<String, dynamic>> schedules;
+  final Function(int) onScheduleTap;
   final bool isSelecting;
   final Set<int> selectedIndexes;
+  final bool isShared;
 
-  const SoloWritePage({
+  const ScheduleListPage({
     super.key,
-    required this.memos,
-    required this.onMemoTap,
+    required this.schedules,
+    required this.onScheduleTap,
     required this.isSelecting,
     required this.selectedIndexes,
+    this.isShared = false,
   });
 
   Color _stringToColor(dynamic color) {
-    if (color is Color) return color; // 이미 Color 타입이면 그대로
+    if (color is Color) return color;
     if (color is String) {
       switch (color.toLowerCase()) {
         case 'red':
@@ -31,32 +33,32 @@ class SoloWritePage extends StatelessWidget {
         case 'purple':
           return Colors.purple;
         default:
-          return Colors.red; // 기본 색상
+          return Colors.red;
       }
     }
-    return Colors.red; // 기본 색상
+    return Colors.red;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (memos.isEmpty) {
+    if (schedules.isEmpty) {
       return const Center(
-        child: Text('등록된 메모가 없습니다.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+        child: Text('등록된 일정이 없습니다.', style: TextStyle(fontSize: 16, color: Colors.grey)),
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 100),
-      itemCount: memos.length,
+      itemCount: schedules.length,
       itemBuilder: (context, index) {
-        final item = memos[index];
+        final schedule = schedules[index];
         final isSelected = selectedIndexes.contains(index);
-        final iconColor = _stringToColor(item['color']);
+        final iconColor = _stringToColor(schedule['color']);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
           child: GestureDetector(
-            onTap: () => onMemoTap(index),
+            onTap: () => onScheduleTap(index),
             child: Container(
               decoration: BoxDecoration(
                 color: isSelected ? const Color(0xFFFFF3E0) : const Color(0xFFEEEEEE),
@@ -75,37 +77,49 @@ class SoloWritePage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.place, color: iconColor),
-                      const SizedBox(width: 10),
+                      Icon(Icons.location_on, color: iconColor),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          item['location'] ?? '',
+                          schedule['title'] ?? '제목 없음',
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
                           ),
                         ),
                       ),
                       if (isSelecting)
-                        Icon(
-                          isSelected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: isSelected
-                              ? const Color(0xFFFFA724)
-                              : Colors.grey,
+                        Checkbox(
+                          value: isSelected,
+                          onChanged: (value) => onScheduleTap(index),
+                          activeColor: const Color(0xFFFFA724),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
-                    item['memo'] ?? '',
+                    schedule['description'] ?? '내용 없음',
                     style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
+                      fontSize: 14,
+                      color: Colors.black87,
                     ),
                   ),
+                  if (isShared && schedule['members'] != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.people, size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${schedule['members'].length}명 참여 중',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

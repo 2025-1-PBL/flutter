@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_main.dart';
+import '../api/schedule_service.dart';
+import '../api/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -12,15 +14,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> memos = [
-    '스타벅스 가서 아이스아메리카노랑 아...',
-    '롯데마트가서 이거랑 이거랑 이거 사...',
-    '약국에서 영양제 사고 물도 사기',
-    '택배 찾아오기',
-    '계란 사기',
-    '은행 가기',
-  ];
-  final List<bool> _checked = [];
+  final ScheduleService _scheduleService = ScheduleService();
+  final UserService _userService = UserService();
+  List<dynamic> _schedules = [];
+  Map<String, dynamic>? _currentUser;
+  bool _isLoading = true;
 
   final List<Map<String, dynamic>> posts = [
     {'title': '[스타벅스] 3월 한 달간 30% 할인', 'location': '가좌동', 'likes': 4},
@@ -32,12 +30,42 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _checked.addAll(List.generate(memos.length, (_) => false));
+    _loadData();
 
     if (widget.showSignupComplete) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSignupCompleteModal(context);
       });
+    }
+  }
+
+  Future<void> _loadData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // 현재 사용자 정보 가져오기
+      final userData = await _userService.getCurrentUser();
+      setState(() {
+        _currentUser = userData;
+      });
+
+      // 사용자의 일정 가져오기
+      final schedules = await _scheduleService.getAllSchedulesByUser(userData['id']);
+      setState(() {
+        _schedules = schedules;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터를 불러오는데 실패했습니다: $e')),
+        );
+      }
     }
   }
 
@@ -117,6 +145,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildScheduleCard() {
+    if (_isLoading) {
+      return Container(
+        decoration: _boxDecoration(),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Container(
       decoration: _boxDecoration(),
       padding: const EdgeInsets.only(bottom: 12),
@@ -133,42 +170,61 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: memos.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
-              itemBuilder: (context, index) {
-                return SizedBox(
-                  height: 36,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Text(
-                            memos[index],
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 14),
-                          ),
+            child: _schedules.isEmpty
+                ? const Center(
+                    child: Text('등록된 일정이 없습니다.'),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: _schedules.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                    itemBuilder: (context, index) {
+                      final schedule = _schedules[index];
+                      return SizedBox(
+                        height: 36,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Text(
+                                  schedule['title'] ?? '제목 없음',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                            Checkbox(
+                              value: schedule['isCompleted'] ?? false,
+                              shape: const CircleBorder(),
+                              activeColor: const Color(0xFFFFCC00),
+                              onChanged: (val) async {
+                                try {
+                                  await _scheduleService.updateSchedule(
+                                    schedule['id'],
+                                    _currentUser!['id'],
+                                    {
+                                      ...schedule,
+                                      'isCompleted': val,
+                                    },
+                                  );
+                                  _loadData(); // 데이터 새로고침
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('일정 상태 변경에 실패했습니다: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
                         ),
-                      ),
-                      Checkbox(
-                        value: _checked[index],
-                        shape: const CircleBorder(),
-                        activeColor: const Color(0xFFFFCC00),
-                        onChanged: (val) {
-                          setState(() {
-                            _checked[index] = val ?? false;
-                          });
-                        },
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

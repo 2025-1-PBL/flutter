@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'write_post.dart';
 import 'post_detail_screen.dart'; // 상세 페이지 import
+import 'package:mapmoa/api/article_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -11,377 +13,276 @@ class CommunityPage extends StatefulWidget {
 }
 
 class _CommunityPageState extends State<CommunityPage> {
-  bool isCardView = true;
-  String selectedSort = '최신순';
-  bool isFabPressed = false;
-
-  final TextEditingController _searchController = TextEditingController();
-
-  List<Map<String, dynamic>> posts = [
-    {'title': '[스타벅스] 3월 한 달간 30% 할인', 'location': '가좌동', 'likes': 4, 'date': '25.03.27'},
-    {'title': '[올리브영] 새학기 학생들을 위한 20% 할인', 'location': '가좌동', 'likes': 3, 'date': '25.03.28'},
-    {'title': '[배스킨라빈스] 봄 시즌 아이스크림 할인', 'location': '가좌동', 'likes': 2, 'date': '25.03.29'},
-    {'title': '[OG버거] 개강 기념 블랙페퍼 버거 할인', 'location': '가좌동', 'likes': 1, 'date': '25.03.30'},
-  ];
-
-  List<Map<String, dynamic>> filteredPosts = [];
-
-  Color get fabColor => isFabPressed ? const Color(0xFFFFA724) : const Color(0xFF316954);
+  final _articleService = ArticleService();
+  final _authService = AuthService();
+  List<Map<String, dynamic>> _articles = [];
+  bool _isLoading = true;
+  int _currentPage = 0;
+  final int _pageSize = 10;
+  bool _hasMore = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    filteredPosts = posts;
-    _searchController.addListener(_onSearchChanged);
+    _loadArticles();
+    _scrollController.addListener(_onScroll);
   }
 
-  void _onSearchChanged() {
-    String searchText = _searchController.text.toLowerCase();
-    setState(() {
-      filteredPosts = posts.where((post) {
-        return post['title'].toLowerCase().contains(searchText) ||
-            post['location'].toLowerCase().contains(searchText);
-      }).toList();
-    });
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  void _onSortChanged(String sort) {
-    setState(() {
-      selectedSort = sort;
-      if (sort == '최신순') {
-        filteredPosts.sort((a, b) => b['date'].compareTo(a['date']));
-      } else if (sort == '좋아요순') {
-        filteredPosts.sort((a, b) => b['likes'].compareTo(a['likes']));
-      } else if (sort == '거리순') {
-        filteredPosts.sort((a, b) => a['location'].compareTo(b['location']));
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      if (!_isLoading && _hasMore) {
+        _loadMoreArticles();
       }
-    });
+    }
+  }
+
+  Future<void> _loadArticles() async {
+    try {
+      setState(() => _isLoading = true);
+      final articles = await _articleService.getAllArticles(page: 0, size: _pageSize);
+      setState(() {
+        _articles = articles;
+        _currentPage = 0;
+        _hasMore = articles.length == _pageSize;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnackBar('게시글을 불러오는데 실패했습니다: $e');
+    }
+  }
+
+  Future<void> _loadMoreArticles() async {
+    if (_isLoading || !_hasMore) return;
+
+    try {
+      setState(() => _isLoading = true);
+      final nextPage = _currentPage + 1;
+      final articles = await _articleService.getAllArticles(page: nextPage, size: _pageSize);
+      
+      setState(() {
+        _articles.addAll(articles);
+        _currentPage = nextPage;
+        _hasMore = articles.length == _pageSize;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnackBar('게시글을 불러오는데 실패했습니다: $e');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _addNewPost() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const WritePostScreen()),
+    );
+    if (result == true) {
+      await _loadArticles();
+    }
+  }
+
+  Future<void> _viewPostDetail(int index) async {
+    final article = _articles[index];
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PostDetailScreen(article: article),
+      ),
+    );
+    await _loadArticles(); // 댓글이나 좋아요가 변경되었을 수 있으므로 새로고침
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          children: [
-            const SizedBox(height: 25),
-            _buildSearchBar(),
-            const SizedBox(height: 20),
-            _buildTraceCard(),
-            const SizedBox(height: 20),
-            _buildSortButtons(),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () => setState(() => isCardView = true),
-                  child: Text('카드 형식',
-                      style: TextStyle(
-                          color: isCardView ? const Color(0xFFFFA724) : Colors.grey,
-                          fontSize: 16)),
-                ),
-                const Text('|'),
-                TextButton(
-                  onPressed: () => setState(() => isCardView = false),
-                  child: Text('카테고리 형식',
-                      style: TextStyle(
-                          color: !isCardView ? const Color(0xFFFFA724) : Colors.grey,
-                          fontSize: 16)),
-                ),
-              ],
-            ),
-            const Divider(height: 1, thickness: 1),
-            const SizedBox(height: 20),
-            isCardView ? _buildHorizontalCardList() : _buildVerticalCategoryList(),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          setState(() => isFabPressed = true);
-          await Future.delayed(const Duration(milliseconds: 300));
-          if (!mounted) return;
-          setState(() => isFabPressed = false);
-
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const WritePostScreen()),
-          );
-        },
-        backgroundColor: fabColor,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFF316954), // 상단 녹색 라인
-            width: 2,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          '커뮤니티',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF316954)),
-          hintText: '',
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          filled: false,
-          fillColor: Colors.transparent,
-        ),
-        style: const TextStyle(fontSize: 16),
-      ),
-    );
-  }
-
-  Widget _buildTraceCard() => Container(
-    height: 40,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF2B1D1D).withAlpha(13),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        )
-      ],
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: const [
-          Text('심슨 님의 흔적을 확인하세요'),
-          Spacer(),
-          Icon(Icons.person, size: 20),
-          SizedBox(width: 12),
-          Icon(Icons.favorite, size: 20),
-          SizedBox(width: 12),
-          Icon(Icons.bookmark, size: 20),
-        ],
-      ),
-    ),
-  );
-
-  Widget _buildSortButtons() {
-    return Container(
-      height: 42,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2B1D1D).withAlpha(13),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.grey),
+            onPressed: _loadArticles,
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: ['최신순', '좋아요순', '거리순'].map((sort) {
-          final isSelected = selectedSort == sort;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _onSortChanged(sort),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF2B1D1D).withAlpha(13)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Center(
-                  child: Text(
-                    sort,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFFFFA724) : Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+      body: _isLoading && _articles.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadArticles,
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.only(bottom: 100),
+                itemCount: _articles.length + (_hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _articles.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
 
-  Widget _buildHorizontalCardList() => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    child: SizedBox(
-      height: 360,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        itemCount: filteredPosts.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final post = filteredPosts[index];
-          final isLast = index == filteredPosts.length - 1;
-
-          return Container(
-            width: 250,
-            margin: EdgeInsets.only(
-              left: index == 0 ? 0 : 10,
-              right: isLast ? 40 : 0,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PostDetailScreen(post: post),
-                  ),
-                );
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 170,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF316954),
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20)),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  final article = _articles[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                    child: GestureDetector(
+                      onTap: () => _viewPostDetail(index),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2B1D1D).withAlpha(13),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(post['date'],
-                                style: const TextStyle(
-                                    fontSize: 16, color: Colors.grey)),
                             Row(
                               children: [
-                                const Icon(Icons.location_on,
-                                    size: 16, color: Colors.grey),
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.grey[200],
+                                  backgroundImage: article['author']?['profileImage'] != null
+                                      ? NetworkImage(article['author']['profileImage'])
+                                      : null,
+                                  child: article['author']?['profileImage'] == null
+                                      ? const Icon(Icons.person, color: Colors.grey)
+                                      : null,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        article['author']?['name'] ?? '익명',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        _formatDate(article['createdAt']),
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              article['title'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              article['content'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Icon(Icons.favorite,
+                                    color: Colors.grey[400], size: 16),
                                 const SizedBox(width: 4),
-                                Text(post['location'],
-                                    style: const TextStyle(
-                                        fontSize: 16, color: Colors.grey)),
+                                Text(
+                                  '${article['likeCount'] ?? 0}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Icon(Icons.comment,
+                                    color: Colors.grey[400], size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${article['commentCount'] ?? 0}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        Text(post['title'],
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            const Icon(Icons.favorite,
-                                size: 20, color: Color(0xFFFFA724)),
-                            const SizedBox(width: 4),
-                            Text('${post['likes']}',
-                                style: const TextStyle(fontSize: 20)),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-          );
-        },
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addNewPost,
+        backgroundColor: Colors.white,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.edit, color: Color(0xFFFFA724)),
       ),
-    ),
-  );
+    );
+  }
 
-  Widget _buildVerticalCategoryList() => ListView.separated(
-    physics: const NeverScrollableScrollPhysics(),
-    shrinkWrap: true,
-    itemCount: filteredPosts.length,
-    separatorBuilder: (context, index) => const Divider(thickness: 0.5, color: Color(0xFFE0E0E0)),
-    itemBuilder: (context, index) {
-      final post = filteredPosts[index];
-      return InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PostDetailScreen(post: post),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 게시글 정보 (제목 + 위치)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post['title'],
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      post['location'],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 좋아요 / 북마크 아이콘
-              Column(
-                children: const [
-                  Icon(Icons.favorite, color: Color(0xFF316954), size: 20),
-                  SizedBox(height: 8),
-                  Icon(Icons.bookmark, color: Color(0xFF316954), size: 20),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '';
+    final date = DateTime.parse(dateStr);
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}일 전';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}시간 전';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}분 전';
+    } else {
+      return '방금 전';
+    }
+  }
 }

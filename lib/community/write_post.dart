@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../schedule/map_select_page.dart';
+import 'package:mapmoa/api/article_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
 
 class WritePostScreen extends StatefulWidget {
   const WritePostScreen({super.key});
@@ -12,8 +14,11 @@ class WritePostScreen extends StatefulWidget {
 }
 
 class _WritePostScreenState extends State<WritePostScreen> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
+  final _articleService = ArticleService();
+  final _authService = AuthService();
+  bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
   List<XFile> _images = [];
 
@@ -57,187 +62,118 @@ class _WritePostScreenState extends State<WritePostScreen> {
     super.dispose();
   }
 
+  Future<void> _submitPost() async {
+    if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('제목과 내용을 모두 입력해주세요.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('로그인이 필요합니다.');
+      }
+
+      await _articleService.createArticle(
+        title: _titleController.text,
+        content: _contentController.text,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context, true); // 성공 시 true 반환
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('게시글 작성에 실패했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      body: Column(
-        children: [
-          CustomTopBar(
-            title: '게시물 작성',
-            onBack: () => Navigator.pop(context),
-            onAction: isFormValid ? () => Navigator.pop(context) : null,
-            actionText: '작성 완료',
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          '게시글 작성',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: ListView(
-                padding: const EdgeInsets.only(top: 32, bottom: 20),
-                children: [
-                  const Text('제목', style: TextStyle(fontSize: 16, color: Colors.black)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: _inputDecoration(),
-                    child: TextField(
-                      controller: _titleController,
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
-                      decoration: const InputDecoration(
-                        hintText: '20자 이내의 한문/영문/숫자',
-                        hintStyle: TextStyle(fontSize: 16, color: Color(0xFFBDBDBD)),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 이미지 추가
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: _pickImages,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0E0E0),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(Icons.camera_alt,
-                                  size: 32, color: Colors.white),
-                            ),
-                            Positioned(
-                              bottom: 4,
-                              child: Text(
-                                '${_images.length}/10',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFFBDBDBD)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: _images
-                                .asMap()
-                                .entries
-                                .map((entry) {
-                              final index = entry.key;
-                              final img = entry.value;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: Stack(
-                                  alignment: Alignment.bottomCenter,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.file(
-                                        File(img.path),
-                                        width: 72,
-                                        height: 72,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    if (index == 0)
-                                      Container(
-                                        width: 72,
-                                        height: 25,
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.5),
-                                          borderRadius: const BorderRadius.only(
-                                            bottomLeft: Radius.circular(8),
-                                            bottomRight: Radius.circular(8),
-                                          ),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: const Text(
-                                          '대표이미지',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-                  const Text('내용', style: TextStyle(fontSize: 16, color: Colors.black)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: _inputDecoration(),
-                    child: TextField(
-                      controller: _contentController,
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
-                      maxLines: 12,
-                      decoration: const InputDecoration.collapsed(
-                        hintText: '내용을 입력하세요',
-                        hintStyle: TextStyle(fontSize: 16, color: Color(0xFFBDBDBD)),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-                  const Text('위치', style: TextStyle(fontSize: 16, color: Colors.black)),
-                  const SizedBox(height: 6),
-                  GestureDetector(
-                    onTap: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MapSelectPage()),
-                      );
-
-                      if (result != null && result['address'] != null) {
-                        setState(() {
-                          _selectedAddress = result['address'];
-                        });
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: _inputDecoration(),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _selectedAddress ?? '위치 설정',
-                              style: TextStyle(
-                                color: _selectedAddress != null ? Colors.black : const Color(0xFFBDBDBD),
-                                fontSize: 16,
-                              ),
-                              overflow: TextOverflow.ellipsis, // ✅ 길면 말줄임
-                              maxLines: 1,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _isLoading ? null : _submitPost,
+            child: Text(
+              '완료',
+              style: TextStyle(
+                color: _isLoading ? Colors.grey : const Color(0xFFFFA724),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
         ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      hintText: '제목을 입력하세요',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Divider(height: 32),
+                  TextField(
+                    controller: _contentController,
+                    decoration: const InputDecoration(
+                      hintText: '내용을 입력하세요',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                  ),
+                ],
+              ),
+            ),
     );
   }
 

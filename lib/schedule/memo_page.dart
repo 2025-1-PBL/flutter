@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mapmoa/schedule/solo_write.dart';
-import 'package:mapmoa/schedule/shared_write.dart';
 import 'package:mapmoa/schedule/memo_write_page.dart';
 import 'package:mapmoa/widgets/custom_bottom_nav_bar.dart';
-import 'package:mapmoa/schedule/memo_data.dart'; // ✅ 전역 메모 import
+import 'package:mapmoa/api/schedule_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
 
 class MemoPage extends StatefulWidget {
   const MemoPage({super.key});
@@ -17,6 +17,39 @@ class _MemoPageState extends State<MemoPage> {
   bool isPersonalSelected = true;
   bool isSelecting = false;
   Set<int> selectedIndexes = {};
+  final _scheduleService = ScheduleService();
+  final _authService = AuthService();
+  List<Map<String, dynamic>> _personalSchedules = [];
+  List<Map<String, dynamic>> _sharedSchedules = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    try {
+      setState(() => _isLoading = true);
+      
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('사용자 정보를 가져올 수 없습니다.');
+      }
+
+      final schedules = await _scheduleService.getAllSchedulesByUser(currentUser['id']);
+      
+      setState(() {
+        _personalSchedules = schedules.where((schedule) => !schedule['isShared']).toList();
+        _sharedSchedules = schedules.where((schedule) => schedule['isShared']).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showToast('일정을 불러오는데 실패했습니다: $e');
+    }
+  }
 
   void _showToast(String message) {
     Fluttertoast.cancel();
@@ -31,23 +64,17 @@ class _MemoPageState extends State<MemoPage> {
     );
   }
 
-  Future<void> _addNewMemo() async {
+  Future<void> _addNewSchedule() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const MemoWritePage()),
     );
     if (result != null) {
-      setState(() {
-        if (isPersonalSelected) {
-          globalPersonalMemos.add(result);
-        } else {
-          globalSharedMemos.add(result);
-        }
-      });
+      await _loadSchedules();
     }
   }
 
-  Future<void> _editMemo(int index) async {
+  Future<void> _editSchedule(int index) async {
     if (isSelecting) {
       setState(() {
         if (selectedIndexes.contains(index)) {
@@ -59,41 +86,26 @@ class _MemoPageState extends State<MemoPage> {
       return;
     }
 
-    final currentMemo =
-    isPersonalSelected ? globalPersonalMemos[index] : globalSharedMemos[index];
+    final currentSchedule = isPersonalSelected ? _personalSchedules[index] : _sharedSchedules[index];
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => MemoWritePage(
           initialData: {
-            'index': index,
-            'location': currentMemo['location'],
-            'memo': currentMemo['memo'],
-            'color': currentMemo['color'],
-            'latitude': currentMemo['latitude'],
-            'longitude': currentMemo['longitude'],
+            'id': currentSchedule['id'],
+            'location': currentSchedule['title'],
+            'memo': currentSchedule['description'],
+            'color': currentSchedule['color'],
+            'latitude': currentSchedule['location']['latitude'],
+            'longitude': currentSchedule['location']['longitude'],
           },
         ),
       ),
     );
 
     if (result != null) {
-      setState(() {
-        if (isPersonalSelected) {
-          globalPersonalMemos[index]['location'] = result['location'];
-          globalPersonalMemos[index]['memo'] = result['memo'];
-          globalPersonalMemos[index]['color'] = result['color'];
-          globalPersonalMemos[index]['latitude'] = result['latitude'];
-          globalPersonalMemos[index]['longitude'] = result['longitude'];
-        } else {
-          globalSharedMemos[index]['location'] = result['location'];
-          globalSharedMemos[index]['memo'] = result['memo'];
-          globalSharedMemos[index]['color'] = result['color'];
-          globalSharedMemos[index]['latitude'] = result['latitude'];
-          globalSharedMemos[index]['longitude'] = result['longitude'];
-        }
-      });
+      await _loadSchedules();
     }
   }
 
@@ -104,39 +116,63 @@ class _MemoPageState extends State<MemoPage> {
     });
   }
 
-  void _deleteSelected() {
-    setState(() {
-      if (isPersonalSelected) {
-        globalPersonalMemos.removeWhere((item) =>
-            selectedIndexes.contains(globalPersonalMemos.indexOf(item)));
-      } else {
-        globalSharedMemos.removeWhere((item) =>
-            selectedIndexes.contains(globalSharedMemos.indexOf(item)));
+  Future<void> _deleteSelected() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('사용자 정보를 가져올 수 없습니다.');
       }
-      isSelecting = false;
-      selectedIndexes.clear();
-    });
 
-    _showToast("일정이 삭제되었습니다!");
+      final memosToDelete = isPersonalSelected ? _personalMemos : _sharedMemos;
+      for (final index in selectedIndexes) {
+        await _scheduleService.deleteSchedule(
+          memosToDelete[index]['id'],
+          currentUser['id'],
+        );
+      }
+
+      setState(() {
+        isSelecting = false;
+        selectedIndexes.clear();
+      });
+
+      await _loadSchedules(); // 일정 목록 새로고침
+      _showToast("선택한 일정이 삭제되었습니다!");
+    } catch (e) {
+      _showToast('일정 삭제에 실패했습니다: $e');
+    }
   }
 
-  void _deleteAll() {
-    setState(() {
-      if (isPersonalSelected) {
-        globalPersonalMemos.clear();
-      } else {
-        globalSharedMemos.clear();
+  Future<void> _deleteAll() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('사용자 정보를 가져올 수 없습니다.');
       }
-      isSelecting = false;
-      selectedIndexes.clear();
-    });
 
-    _showToast("모든 일정이 삭제되었습니다!");
+      final memosToDelete = isPersonalSelected ? _personalMemos : _sharedMemos;
+      for (final memo in memosToDelete) {
+        await _scheduleService.deleteSchedule(
+          memo['id'],
+          currentUser['id'],
+        );
+      }
+
+      setState(() {
+        isSelecting = false;
+        selectedIndexes.clear();
+      });
+
+      await _loadSchedules(); // 일정 목록 새로고침
+      _showToast("모든 일정이 삭제되었습니다!");
+    } catch (e) {
+      _showToast('일정 삭제에 실패했습니다: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final memos = isPersonalSelected ? globalPersonalMemos : globalSharedMemos;
+    final memos = isPersonalSelected ? _personalMemos : _sharedMemos;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -166,36 +202,11 @@ class _MemoPageState extends State<MemoPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.person,
-                    color: isPersonalSelected ? const Color(0xFFFFA724) : Colors.grey,
-                    size: 24,
+                if (!isSelecting)
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.grey),
+                    onPressed: _loadSchedules,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      isPersonalSelected = true;
-                      isSelecting = false;
-                      selectedIndexes.clear();
-                    });
-                  },
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(
-                    Icons.groups,
-                    color: !isPersonalSelected ? const Color(0xFFFFA724) : Colors.grey,
-                    size: 24,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      isPersonalSelected = false;
-                      isSelecting = false;
-                      selectedIndexes.clear();
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.grey),
                   shape: RoundedRectangleBorder(
@@ -224,52 +235,54 @@ class _MemoPageState extends State<MemoPage> {
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () {
-          if (isSelecting) {
-            setState(() {
-              isSelecting = false;
-              selectedIndexes.clear();
-            });
-          }
-        },
-        child: isPersonalSelected
-            ? SoloWritePage(
-          memos: globalPersonalMemos,
-          onMemoTap: _editMemo,
-          isSelecting: isSelecting,
-          selectedIndexes: selectedIndexes,
-        )
-            : SharedWritePage(
-          memos: globalSharedMemos,
-          onMemoTap: _editMemo,
-          isSelecting: isSelecting,
-          selectedIndexes: selectedIndexes,
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : GestureDetector(
+              onTap: () {
+                if (isSelecting) {
+                  setState(() {
+                    isSelecting = false;
+                    selectedIndexes.clear();
+                  });
+                }
+              },
+              child: isPersonalSelected
+                  ? SoloWritePage(
+                      memos: _personalMemos,
+                      onMemoTap: _editMemo,
+                      isSelecting: isSelecting,
+                      selectedIndexes: selectedIndexes,
+                    )
+                  : SharedWritePage(
+                      memos: _sharedMemos,
+                      onMemoTap: _editMemo,
+                      isSelecting: isSelecting,
+                      selectedIndexes: selectedIndexes,
+                    ),
+            ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       floatingActionButton: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: isSelecting
             ? Padding(
-          padding: const EdgeInsets.only(bottom: 24, right: 16),
-          child: FloatingActionButton.extended(
-            onPressed: selectedIndexes.isEmpty ? null : _deleteSelected,
-            backgroundColor:
-            selectedIndexes.isEmpty ? Colors.grey : const Color(0xFFFFA724),
-            label: const Text('삭제', style: TextStyle(color: Colors.white)),
-            icon: const Icon(Icons.delete, color: Colors.white),
-          ),
-        )
+                padding: const EdgeInsets.only(bottom: 24, right: 16),
+                child: FloatingActionButton.extended(
+                  onPressed: selectedIndexes.isEmpty ? null : _deleteSelected,
+                  backgroundColor:
+                      selectedIndexes.isEmpty ? Colors.grey : const Color(0xFFFFA724),
+                  label: const Text('삭제', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                ),
+              )
             : Padding(
-          padding: const EdgeInsets.only(bottom: 24, right: 16),
-          child: FloatingActionButton(
-            onPressed: _addNewMemo,
-            backgroundColor: Colors.white,
-            shape: const CircleBorder(),
-            child: const Icon(Icons.edit, color: Color(0xFFFFA724)),
-          ),
-        ),
+                padding: const EdgeInsets.only(bottom: 24, right: 16),
+                child: FloatingActionButton(
+                  onPressed: _addNewMemo,
+                  backgroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  child: const Icon(Icons.edit, color: Color(0xFFFFA724)),
+                ),
+              ),
       ),
     );
   }
