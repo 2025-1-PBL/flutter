@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/custom_top_nav_bar.dart';
+import '../main.dart'; // FriendProvider가 정의되어 있는 파일
 
 class MemberManageScreen extends StatefulWidget {
   const MemberManageScreen({super.key});
@@ -14,8 +16,6 @@ class _MemberManageScreenState extends State<MemberManageScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final List<String> friends = [];
-  final List<String> requests = [];
 
   @override
   void initState() {
@@ -25,6 +25,8 @@ class _MemberManageScreenState extends State<MemberManageScreen>
 
   @override
   Widget build(BuildContext context) {
+    final friendProvider = context.watch<FriendProvider>();
+
     return Scaffold(
       body: Container(
         color: const Color(0xFFF9FAFB),
@@ -90,7 +92,11 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                                   width: double.infinity,
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      // TODO: 친구 요청 로직
+                                      if (_emailController.text.isNotEmpty) {
+                                        friendProvider.addRequest(_emailController.text);
+                                        Navigator.pop(context);
+                                        _emailController.clear();
+                                      }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFFFFA724),
@@ -155,8 +161,8 @@ class _MemberManageScreenState extends State<MemberManageScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildFriendTab(),
-                  _buildRequestTab(),
+                  _buildFriendTab(friendProvider),
+                  _buildRequestTab(friendProvider),
                 ],
               ),
             ),
@@ -166,8 +172,11 @@ class _MemberManageScreenState extends State<MemberManageScreen>
     );
   }
 
-  Widget _buildFriendTab() {
-    final filteredFriends = friends.where((f) => f.contains(_searchController.text)).toList();
+  Widget _buildFriendTab(FriendProvider friendProvider) {
+    final filtered = friendProvider.friends
+        .where((f) => f.contains(_searchController.text))
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
       child: Column(
@@ -175,27 +184,26 @@ class _MemberManageScreenState extends State<MemberManageScreen>
         children: [
           _buildSearchBar(),
           const SizedBox(height: 30),
-          Text('${filteredFriends.length}명', style: const TextStyle(fontSize: 18, color: Colors.black)),
+          Text('${filtered.length}명', style: const TextStyle(fontSize: 18, color: Colors.black)),
           const SizedBox(height: 10),
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.zero,
-              itemCount: filteredFriends.length,
+              itemCount: filtered.length,
               separatorBuilder: (_, __) => const Divider(color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
+                final name = filtered[index];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(
                     backgroundColor: Colors.grey,
                     child: Icon(Icons.person, color: Colors.white),
                   ),
-                  title: Text(filteredFriends[index]),
+                  title: Text(name),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline, color: Colors.grey),
                     onPressed: () {
-                      setState(() {
-                        friends.remove(filteredFriends[index]);
-                      });
+                      friendProvider.removeFriend(name);
                     },
                   ),
                 );
@@ -207,8 +215,11 @@ class _MemberManageScreenState extends State<MemberManageScreen>
     );
   }
 
-  Widget _buildRequestTab() {
-    final filteredRequests = requests.where((r) => r.contains(_searchController.text)).toList();
+  Widget _buildRequestTab(FriendProvider friendProvider) {
+    final filtered = friendProvider.requests
+        .where((r) => r.contains(_searchController.text))
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
       child: Column(
@@ -216,14 +227,15 @@ class _MemberManageScreenState extends State<MemberManageScreen>
         children: [
           _buildSearchBar(),
           const SizedBox(height: 30),
-          Text('${filteredRequests.length}건', style: const TextStyle(fontSize: 18, color: Colors.black)),
+          Text('${filtered.length}건', style: const TextStyle(fontSize: 18, color: Colors.black)),
           const SizedBox(height: 10),
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.zero,
-              itemCount: filteredRequests.length,
+              itemCount: filtered.length,
               separatorBuilder: (_, __) => const Divider(color: Color(0xFFE0E0E0)),
               itemBuilder: (context, index) {
+                final name = filtered[index];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Row(
@@ -236,7 +248,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                             child: Icon(Icons.person, color: Colors.white),
                           ),
                           const SizedBox(width: 12),
-                          Text(filteredRequests[index], style: const TextStyle(fontSize: 16)),
+                          Text(name, style: const TextStyle(fontSize: 16)),
                         ],
                       ),
                       Row(
@@ -245,10 +257,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                             padding: const EdgeInsets.only(right: 8),
                             child: TextButton(
                               onPressed: () {
-                                setState(() {
-                                  friends.add(filteredRequests[index]);
-                                  requests.remove(filteredRequests[index]);
-                                });
+                                friendProvider.acceptRequest(name);
                               },
                               style: TextButton.styleFrom(
                                 backgroundColor: const Color(0xFFFFA724),
@@ -262,9 +271,7 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                           ),
                           TextButton(
                             onPressed: () {
-                              setState(() {
-                                requests.remove(filteredRequests[index]);
-                              });
+                              friendProvider.rejectRequest(name);
                             },
                             style: TextButton.styleFrom(
                               side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
