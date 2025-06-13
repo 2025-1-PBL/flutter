@@ -190,7 +190,14 @@ class _MemberManageScreenState extends State<MemberManageScreen>
                     child: Icon(Icons.person, color: Colors.white),
                   ),
                   title: Text(filteredFriends[index]),
-                  trailing: const Icon(Icons.delete_outline, color: Colors.grey),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                    onPressed: () {
+                      setState(() {
+                        friends.remove(filteredFriends[index]);
+                      });
+                    },
+                  ),
                 );
               },
             ),

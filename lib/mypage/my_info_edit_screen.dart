@@ -8,7 +8,7 @@ import 'email_edit_screen.dart';
 import 'withdraw_screen.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_pop_up.dart';
-import '../widgets/custom_schedule_button.dart'; // ✅ 커스텀 버튼
+import '../widgets/custom_schedule_button.dart';
 import 'package:mapmoa/global/user_profile.dart';
 import 'password_edit_screen.dart';
 
@@ -56,7 +56,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
 
     try {
       final response = await dio.post(
-        'https://yourserver.com/api/upload', // 실제 서버 주소로 바꿔주세요
+        'https://yourserver.com/api/upload',
         data: formData,
         options: Options(headers: header),
       );
@@ -138,7 +138,16 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildItem(context, '닉네임', trailing: '심슨'),
+                        _buildItem(
+                          context,
+                          '닉네임',
+                          trailingWidget: ValueListenableBuilder<String>(
+                            valueListenable: globalUserName,
+                            builder: (context, name, _) {
+                              return Text(name, style: const TextStyle(color: Colors.grey));
+                            },
+                          ),
+                        ),
                         _buildItem(context, '이메일 변경'),
                         _buildItem(context, '비밀번호 변경', isLast: true),
                       ],
@@ -183,7 +192,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
       ),
       floatingActionButton: (_image != null && !_isSaving)
           ? Padding(
-        padding: const EdgeInsets.only(bottom: 24, right: 40), // ✅ 위치 동일하게
+        padding: const EdgeInsets.only(bottom: 24, right: 40),
         child: Align(
           alignment: Alignment.bottomRight,
           child: CustomScheduleButton(
@@ -219,14 +228,18 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
             },
           ),
         ),
-
       )
           : null,
     );
   }
 
-  Widget _buildItem(BuildContext context, String title,
-      {String? trailing, bool isLast = false}) {
+  Widget _buildItem(
+      BuildContext context,
+      String title, {
+        String? trailing,
+        Widget? trailingWidget,
+        bool isLast = false,
+      }) {
     return InkWell(
       onTap: () {
         if (title == '닉네임') {
@@ -259,7 +272,9 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
           children: [
             Text(title, style: const TextStyle(fontSize: 16)),
             const Spacer(),
-            if (trailing != null)
+            if (trailingWidget != null)
+              trailingWidget
+            else if (trailing != null)
               Text(trailing, style: const TextStyle(color: Colors.grey)),
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right, color: Colors.grey),
