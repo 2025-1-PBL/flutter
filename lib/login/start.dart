@@ -6,7 +6,7 @@ import 'find_password.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'snslogin.dart'; // 🔥 SNS 로그인 화면 import
+import 'snslogin.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool showResetPopup;
@@ -38,12 +38,10 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint("응답 상태 코드: ${response.statusCode}");
       debugPrint("응답 바디: ${response.body}");
 
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final String accessToken = data['token'];
         await _storage.write(key: 'accessToken', value: accessToken);
-
 
         Navigator.pushReplacement(
           context,
@@ -139,16 +137,21 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 100),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 20),
+
+                  // 🔄 로고 이미지 삽입
                   Container(
-                    height: 60,
-                    color: Colors.grey[400],
-                    margin: const EdgeInsets.only(bottom: 30),
+                    height: 220,
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
+
                   const Text(
                     '지금 Map-Mo와\n하루를 함께 하세요!',
                     textAlign: TextAlign.center,
@@ -162,7 +165,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 이메일 입력
                   Container(
                     decoration: _inputBoxDecoration(),
                     child: TextField(
@@ -171,8 +173,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 5),
-
-                  // 비밀번호 입력
                   Container(
                     decoration: _inputBoxDecoration(),
                     child: TextField(
@@ -183,7 +183,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 5),
 
-                  // 자동 로그인 체크박스
                   Row(
                     children: [
                       Transform.translate(
@@ -203,7 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 소셜 로그인 버튼 → snslogin.dart 이동
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
@@ -226,7 +224,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 5),
 
-                  // 일반 로그인 버튼
                   ElevatedButton(
                     onPressed: () {
                       final email = idController.text.trim();
@@ -246,10 +243,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
-
                   const SizedBox(height: 10),
 
-                  // 아이디/비밀번호 찾기
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -288,7 +283,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // 하단 회원가입 유도
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(

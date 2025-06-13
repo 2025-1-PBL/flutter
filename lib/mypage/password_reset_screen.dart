@@ -34,6 +34,24 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     // TODO: 비밀번호 변경 처리
   }
 
+  InputDecoration _inputDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(color: Color(0xFFFFA724)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +65,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40), // ✅ 마진 40
+              padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -59,6 +77,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                   const SizedBox(height: 12),
                   const Divider(thickness: 1, color: Colors.black),
                   const SizedBox(height: 24),
+
                   const Text(
                     '비밀번호*',
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -67,22 +86,9 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                   TextField(
                     controller: _newPasswordController,
                     obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: '8~16자 이내의 영문/숫자/특수문자 조합',
-                      hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: const BorderSide(color: Color(0xFFFFA724)),
-                      ),
-                    ),
+                    decoration: _inputDecoration('8~16자 이내의 영문/숫자/특수문자 조합'),
                   ),
+
                   const SizedBox(height: 20),
                   const Text(
                     '비밀번호 확인*',
@@ -92,22 +98,9 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                   TextField(
                     controller: _confirmPasswordController,
                     obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: '비밀번호 다시 입력',
-                      hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: const BorderSide(color: Color(0xFFFFA724)),
-                      ),
-                    ),
+                    decoration: _inputDecoration('비밀번호 다시 입력'),
                   ),
+
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,

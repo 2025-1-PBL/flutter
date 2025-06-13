@@ -193,13 +193,13 @@ class MyPageScreen extends StatelessWidget {
                           MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
                         );
                       },
-                      isLast: true, // ✅ 선 제거
+                      isLast: true,
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 22), // ✅ 위 섹션과 간격 확보
+              const SizedBox(height: 16),
 
               // 문의 및 이벤트 요청 박스
               Container(

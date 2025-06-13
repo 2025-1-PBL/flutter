@@ -12,6 +12,10 @@ class CustomTopBar extends StatelessWidget {
   final Color backIconColor;
   final Color? actionIconColor;
 
+  // ✅ 추가된 파라미터
+  final String? rightText;
+  final VoidCallback? onRightPressed;
+
   const CustomTopBar({
     super.key,
     required this.title,
@@ -23,6 +27,8 @@ class CustomTopBar extends StatelessWidget {
     this.titleColor = Colors.black,
     this.backIconColor = const Color(0xFFFFA724),
     this.actionIconColor,
+    this.rightText,
+    this.onRightPressed,
   });
 
   @override
@@ -54,7 +60,19 @@ class CustomTopBar extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: actionText != null
+              child: rightText != null && onRightPressed != null
+                  ? TextButton(
+                onPressed: onRightPressed,
+                child: Text(
+                  rightText!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFFFA724),
+                  ),
+                ),
+              )
+                  : actionText != null
                   ? TextButton(
                 onPressed: onAction,
                 child: Text(
