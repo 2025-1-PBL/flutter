@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
-import 'join1.dart'; // JoinScreen import
+import 'join1.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SnsLoginScreen extends StatelessWidget {
@@ -17,17 +17,18 @@ class SnsLoginScreen extends StatelessWidget {
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 100),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 20),
-
-                  // 로고 이미지 영역
+                  // 🔄 로고 이미지 (LoginScreen과 동일하게 적용)
                   Container(
-                    height: 60,
-                    color: Colors.grey[400],
-                    margin: const EdgeInsets.only(bottom: 30),
+                    height: 220,
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
 
                   // 타이틀

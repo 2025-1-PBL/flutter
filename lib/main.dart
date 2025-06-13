@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login/start.dart';
-import 'splash.dart'; // ✅ 추가
+import 'splash.dart';
+import 'home/home_screen.dart';
 
 void main() {
   runApp(const MapMoaApp());
@@ -18,7 +19,7 @@ class MapMoaApp extends StatelessWidget {
         primarySwatch: Colors.orange,
         fontFamily: 'Pretendard',
       ),
-      home: const SplashScreen(), // ✅ 최초 화면을 SplashScreen으로 설정
+      home: const HomeScreen(),
     );
   }
 }

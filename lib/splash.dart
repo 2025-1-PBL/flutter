@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
             return Opacity(
               opacity: 0.2,
               child: Image.asset(
-                'assets/logoo.png',
+                'assets/logo.png',
                 width: 100,
                 height: 100,
               ),
@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
           _buildHugePatternGrid(context),
           Center(
             child: Image.asset(
-              'assets/logoo.png',
+              'assets/logo.png',
               width: 180,
               height: 180,
             ),

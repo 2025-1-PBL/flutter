@@ -5,7 +5,7 @@ import 'package:mapmoa/global/user_profile.dart';
 import 'package:mapmoa/mypage/my_info_edit_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
-import '../map/map_main.dart';
+import '../map/map_page.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -227,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const MapMainPage()),
+          MaterialPageRoute(builder: (_) => const MapPage()),
         );
       },
       child: Container(

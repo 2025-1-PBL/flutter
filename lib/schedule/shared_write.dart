@@ -62,35 +62,34 @@ class _SharedWritePageState extends State<SharedWritePage> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 20, bottom: 100), //상단여백
+      padding: const EdgeInsets.only(top: 20, bottom: 100),
       itemCount: widget.memos.length,
       itemBuilder: (context, index) {
         final item = widget.memos[index];
         final isSelected = widget.selectedIndexes.contains(index);
         final List<Map<String, dynamic>> comments = List<Map<String, dynamic>>.from(item['comments'] ?? []);
-
         _controllers.putIfAbsent(index, () => TextEditingController());
 
         final String profileUrl = item['profileUrl'] ?? defaultProfileUrl;
         final Color iconColor = stringToColor(item['color']);
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 6), //가로여백, 좌우여백
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: GestureDetector(
             onTap: () => widget.onMemoTap(index),
             child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFFFF3E0) : const Color(0xFFEEEEEE),
+                color: isSelected ? const Color(0xFFFFF59D) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2B1D1D).withAlpha(13),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -101,49 +100,53 @@ class _SharedWritePageState extends State<SharedWritePage> {
                         backgroundImage: NetworkImage(profileUrl),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.place, color: iconColor),
+                      Icon(Icons.place, color: iconColor, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           item['location'] ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF767676),
                           ),
                         ),
                       ),
                       if (widget.isSelecting)
                         Icon(
-                          isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
                           color: isSelected ? const Color(0xFFFFA724) : Colors.grey,
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
                   Text(
                     item['memo'] ?? '',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
-                  const Divider(height: 30),
+                  const Divider(height: 10),
                   ...comments.asMap().entries.map((entry) {
                     final idx = entry.key;
                     final comment = entry.value;
                     final String commentProfileUrl = comment['profileUrl'] ?? defaultProfileUrl;
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 12,
                             backgroundImage: NetworkImage(commentProfileUrl),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               comment['text'] ?? '',
-                              style: const TextStyle(fontSize: 13),
+                              style: const TextStyle(fontSize: 14),
                             ),
                           ),
                           GestureDetector(
@@ -153,22 +156,30 @@ class _SharedWritePageState extends State<SharedWritePage> {
                                 item['comments'] = comments;
                               });
                             },
-                            child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                            child: const Icon(Icons.close, size: 20, color: Colors.grey),
                           ),
                         ],
                       ),
                     );
                   }).toList(),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _controllers[index],
+                          style: const TextStyle(fontSize: 14),
                           decoration: const InputDecoration(
                             hintText: '댓글 입력...',
+                            hintStyle: TextStyle(fontSize: 14),
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 0),
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF767676)),
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF767676)),
+                            ),
                           ),
                         ),
                       ),

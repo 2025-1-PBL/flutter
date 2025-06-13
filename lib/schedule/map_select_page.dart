@@ -1,10 +1,10 @@
-// ... 생략된 import는 그대로 유지
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
-import '../widgets/custom_next_nav_bar.dart'; // CustomNextButton 쓰는 경우 이 import가 필요
+import '../widgets/custom_top_nav_bar.dart';
+import '../widgets/custom_schedule_button.dart';
 
 class MapSelectPage extends StatefulWidget {
   const MapSelectPage({super.key});
@@ -94,7 +94,6 @@ class _MapSelectPageState extends State<MapSelectPage> {
           final roadName = result['land']['name'] ?? '';
           final number1 = result['land']['number1'] ?? '';
           final number2 = result['land']['number2'] ?? '';
-
           final fullNumber = number2 != '' ? '$number1-$number2' : number1;
           final buildingName = result['land']['addition0']?['value'] ?? '';
 
@@ -136,85 +135,87 @@ class _MapSelectPageState extends State<MapSelectPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFA724),
-        title: const Text(
-          '위치 선택',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 4,
-      ),
-      body: Stack(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: Column(
         children: [
-          NaverMap(
-            onMapTapped: _onMapTap,
-            onMapReady: (controller) {
-              _mapController = controller;
-              _moveToCurrentLocation();
-            },
+          CustomTopBar(
+            title: '위치 선택',
+            onBack: () => Navigator.pop(context),
           ),
-          if (selectedLatLng != null)
-            Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
+          Expanded(
+            child: Stack(
+              children: [
+                NaverMap(
+                  onMapTapped: _onMapTap,
+                  onMapReady: (controller) {
+                    _mapController = controller;
+                    _moveToCurrentLocation();
+                  },
                 ),
-                child: Text(
-                  selectedAddress ??
-                      '주소를 불러오는 중... (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
-                  style: const TextStyle(fontSize: 16),
+                if (selectedLatLng != null)
+                  Positioned(
+                    top: 20,
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        selectedAddress ??
+                            '주소를 불러오는 중... (${selectedLatLng!.latitude.toStringAsFixed(5)}, ${selectedLatLng!.longitude.toStringAsFixed(5)})',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  bottom: 90,
+                  left: 20,
+                  child: FloatingActionButton(
+                    heroTag: 'zoom_in',
+                    mini: true,
+                    backgroundColor: Colors.white,
+                    onPressed: _zoomIn,
+                    child: const Icon(Icons.zoom_in, color: Colors.black),
+                  ),
                 ),
-              ),
-            ),
-          Positioned(
-            bottom: 90,
-            left: 20,
-            child: FloatingActionButton(
-              heroTag: 'zoom_in',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _zoomIn,
-              child: const Icon(Icons.zoom_in, color: Colors.black),
-            ),
-          ),
-          Positioned(
-            bottom: 30,
-            left: 20,
-            child: FloatingActionButton(
-              heroTag: 'zoom_out',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _zoomOut,
-              child: const Icon(Icons.zoom_out, color: Colors.black),
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 40,
-            right: 40,
-            child: CustomNextButton(
-              label: '위치 선택 완료',
-              enabled: selectedLatLng != null,
-              onPressed: selectedLatLng != null
-                  ? () {
-                Navigator.pop(context, {
-                  'latitude': selectedLatLng!.latitude,
-                  'longitude': selectedLatLng!.longitude,
-                  'address': selectedAddress,
-                });
-              }
-                  : null,
+                Positioned(
+                  bottom: 30,
+                  left: 20,
+                  child: FloatingActionButton(
+                    heroTag: 'zoom_out',
+                    mini: true,
+                    backgroundColor: Colors.white,
+                    onPressed: _zoomOut,
+                    child: const Icon(Icons.zoom_out, color: Colors.black),
+                  ),
+                ),
+                Positioned(
+                  bottom: 40,
+                  right: 40,
+                  child: CustomScheduleButton.fromType(
+                    type: ScheduleButtonType.select,
+                    enabled: selectedLatLng != null,
+                    onTap: () {
+                      if (selectedLatLng != null) {
+                        Navigator.pop(context, {
+                          'latitude': selectedLatLng!.latitude,
+                          'longitude': selectedLatLng!.longitude,
+                          'address': selectedAddress,
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ],

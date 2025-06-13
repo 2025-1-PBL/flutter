@@ -12,13 +12,12 @@ dependencies:
   geolocator: ^9.0.2
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
-  image_picker: ^1.0.7         # ✅ 이미지 선택용
-  dio: ^5.4.0                  # ✅ HTTP 통신용
-  http_parser: ^4.0.2          # ✅ MIME 설정용
-  fluttertoast: ^8.2.4         # ✅ 토스트 메시지
-  flutter_naver_map: ^1.3.1   # ✅ 네이버 지도 플러그인
+  image_picker: ^1.0.7
+  dio: ^5.4.0
+  http_parser: ^4.0.2
+  fluttertoast: ^8.2.4
+  flutter_naver_map: ^1.3.1
   flutter_secure_storage: ^9.2.4
   url_launcher: ^6.1.7
 
@@ -26,8 +25,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-
+  flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.3.5
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
 
 flutter_native_splash:
   color: "#FFFFFF"
@@ -39,8 +43,9 @@ flutter:
 
   assets:
     - assets/map.png
-    - assets/logoo.png
+    - assets/logo.png
     - assets/location.png
+    - assets/icon.png
     - assets/markers/blue.png
     - assets/markers/green.png
     - assets/markers/orange.png

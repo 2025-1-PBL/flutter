@@ -204,7 +204,7 @@ class MyPageScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(height: 16),
 
               // 문의 및 이벤트 요청 박스
               Container(
