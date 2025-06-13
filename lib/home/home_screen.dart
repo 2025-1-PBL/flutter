@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mapmoa/schedule/memo_data.dart';
-import 'package:mapmoa/global/user_profile.dart'; // 전역 프로필 정보
-import 'package:mapmoa/mypage/my_info_edit_screen.dart'; // 정보 수정 화면
+import 'package:mapmoa/global/user_profile.dart';
+import 'package:mapmoa/mypage/my_info_edit_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_page.dart';
-
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -20,12 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late List<Map<String, dynamic>> allMemos;
   final List<bool> _checked = [];
 
-  final List<Map<String, dynamic>> posts = [
-    {'title': '[스타벅스] 3월 한 달간 30% 할인', 'location': '가좌동', 'likes': 4},
-    {'title': '[올리브영] 새학기 학생들을 위한 20% 할인', 'location': '가좌동', 'likes': 3},
-    {'title': '[배스킨라빈스] 봄 시즌 아이스크림 할인', 'location': '가좌동', 'likes': 2},
-    {'title': '[OG버거] 개강 기념 블랙페퍼 버거 할인', 'location': '가좌동', 'likes': 1},
-  ];
+  List<Map<String, dynamic>> posts = [];
 
   @override
   void initState() {
@@ -121,12 +115,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ValueListenableBuilder<String>(
                         valueListenable: globalUserName,
                         builder: (context, name, _) {
-                          return Text('$name 님',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+                          return Column(
+                            children: [
+                              Text('$name 님',
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text('오늘은 ${allMemos.length}개의 일정이 있어요!',
+                                  style: const TextStyle(color: Colors.grey)),
+                            ],
+                          );
                         },
                       ),
-                      const SizedBox(height: 4),
-                      const Text('오늘은 3개의 일정이 있어요!', style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -253,7 +252,14 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         decoration: _boxDecoration(),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        child: ListView.builder(
+        child: posts.isEmpty
+            ? const Center(
+          child: Text(
+            '등록된 게시물이 없습니다.',
+            style: TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+        )
+            : ListView.builder(
           itemCount: posts.length,
           physics: const BouncingScrollPhysics(),
           itemBuilder: (context, index) => Padding(

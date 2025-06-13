@@ -99,15 +99,20 @@ class MyPageScreen extends StatelessWidget {
                         },
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          '심슨 님',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF767676),
-                          ),
-                        ),
+                      ValueListenableBuilder<String>(
+                        valueListenable: globalUserName,
+                        builder: (context, name, _) {
+                          return Expanded(
+                            child: Text(
+                              '${name.isNotEmpty ? name : '사용자'} 님',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF767676),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const Icon(Icons.chevron_right, color: Colors.grey),
                     ],

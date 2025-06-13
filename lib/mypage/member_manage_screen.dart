@@ -14,8 +14,8 @@ class _MemberManageScreenState extends State<MemberManageScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final List<String> friends = ['김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ', '김ㅇㅇ'];
-  final List<String> requests = ['박ㅇㅇ', 'qusㅇㅇ'];
+  final List<String> friends = [];
+  final List<String> requests = [];
 
   @override
   void initState() {
