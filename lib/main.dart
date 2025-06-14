@@ -56,7 +56,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   void _initDeepLinks() {
-    // 앱이 실행 중일 때 딥링크 처리
+    // 앱이 실행 중일 때 딥링크 처리 (일반적인 딥링크만 처리)
     _appLinks.uriLinkStream.listen(
       (Uri uri) {
         _handleDeepLink(uri);
@@ -70,7 +70,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void _handleDeepLink(Uri uri) {
     print('딥링크 수신: $uri');
 
-    // OAuth2 콜백 처리
+    // OAuth2 콜백 처리 (일반적인 HTTP/HTTPS 딥링크)
     if (uri.path.startsWith('/login/oauth2/code/')) {
       final provider = uri.path.split('/').last; // google, kakao, naver
       print('OAuth2 콜백 수신: $provider');
@@ -80,56 +80,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       _checkLoginStatus();
     }
 
-    // 커스텀 스킴 딥링크 처리 (mapmo://oauth2/redirect)
-    if (uri.scheme == 'mapmo' &&
-        uri.host == 'oauth2' &&
-        uri.path == '/redirect') {
-      final token = uri.queryParameters['token'];
-      final refreshToken = uri.queryParameters['refreshToken'];
-
-      if (token != null && refreshToken != null) {
-        print('토큰 수신: $token');
-        _handleOAuth2Success(token, refreshToken);
-      }
-    }
-  }
-
-  Future<void> _handleOAuth2Success(String token, String refreshToken) async {
-    try {
-      // 토큰 저장
-      await SocialLoginService.saveTokensFromCallback(token, refreshToken);
-
-      // AuthService를 사용하여 로그인 상태 확인
-      final isLoggedIn = await _authService.isLoggedIn();
-
-      if (isLoggedIn) {
-        print('소셜 로그인 성공!');
-
-        // mounted 체크 후 화면 전환
-        if (mounted) {
-          // Navigator를 사용하여 HomeScreen으로 이동
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        }
-      } else {
-        print('소셜 로그인 실패: 토큰이 유효하지 않습니다.');
-        if (mounted) {
-          setState(() {
-            _isLoggedIn = false;
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      print('토큰 저장 실패: $e');
-      if (mounted) {
-        setState(() {
-          _isLoggedIn = false;
-          _isLoading = false;
-        });
-      }
-    }
+    // 소셜 로그인 딥링크는 SnsLoginScreen에서 처리하므로 여기서는 제거
   }
 
   Future<void> _checkLoginStatus() async {

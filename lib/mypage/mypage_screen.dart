@@ -29,6 +29,26 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Future<void> _loadUserInfo() async {
     try {
       final userData = await _authService.getCurrentUser();
+
+      // 디버그용 사용자 정보 출력
+      print('=== 현재 로그인한 사용자 정보 ===');
+      print('전체 사용자 데이터: $userData');
+
+      if (userData != null) {
+        print('사용자 ID: ${userData['id']}');
+        print('사용자 이름: ${userData['name']}');
+        print('사용자 이메일: ${userData['email']}');
+        print('프로필 이미지: ${userData['profilePic']}');
+        print('생성일: ${userData['createdAt']}');
+        print('업데이트일: ${userData['updatedAt']}');
+
+        // 추가 필드들도 출력
+        userData.forEach((key, value) {
+          print('$key: $value');
+        });
+      }
+      print('===============================');
+
       setState(() {
         _currentUser = userData;
         _isLoading = false;
