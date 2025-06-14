@@ -21,11 +21,12 @@ class MapMoaApp extends StatelessWidget {
     return MaterialApp(
       title: 'mapmoa!',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-        fontFamily: 'Pretendard',
-      ),
+      theme: ThemeData(primarySwatch: Colors.orange, fontFamily: 'Pretendard'),
       home: const HomeScreen(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
     );
   }
 }

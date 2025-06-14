@@ -79,6 +79,7 @@ class _MemoPageState extends State<MemoPage> {
 
       // 현재 사용자 정보 가져오기
       final userData = await _authService.getCurrentUser();
+      print(userData);
       final userId = userData['id'] as int;
 
       // 사용자의 모든 일정 가져오기

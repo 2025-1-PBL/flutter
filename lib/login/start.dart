@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
+import '../api/auth_service.dart';
 import 'join1.dart';
 import 'find_email.dart';
 import 'find_password.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'snslogin.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,48 +17,35 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _hasShownPopup = false;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthService _authService = AuthService();
 
   Future<void> _login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이메일과 패스워드를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일과 패스워드를 입력해주세요.')));
       return;
     }
+
     try {
-      final uri = Uri.parse('http://127.0.0.1:8080/api/authenticate');
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': email, 'password': password}),
+      // AuthService를 사용하여 로그인
+      await _authService.login(email, password);
+
+      // 로그인 성공 시 홈 화면으로 이동
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
-      debugPrint("응답 상태 코드: ${response.statusCode}");
-      debugPrint("응답 바디: ${response.body}");
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final String accessToken = data['token'];
-        await _storage.write(key: 'accessToken', value: accessToken);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else {
-        String msg = '로그인에 실패했습니다.';
-        try {
-          final Map<String, dynamic> err = jsonDecode(response.body);
-          msg = err['message'] ?? msg;
-        } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
-      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류 발생: $e')),
-      );
+      // 에러 메시지 표시
+      String errorMessage = '로그인에 실패했습니다.';
+      if (e.toString().contains('로그인에 실패했습니다:')) {
+        errorMessage = e.toString().replaceAll('Exception: 로그인에 실패했습니다: ', '');
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
     }
   }
 
@@ -84,7 +69,10 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 200,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 24,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
@@ -141,15 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-
                   // 🔄 로고 이미지 삽입
                   Container(
                     height: 220,
                     alignment: Alignment.center,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                   ),
 
                   const Text(
@@ -190,7 +174,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Checkbox(
                           value: false,
                           onChanged: (val) {},
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                           visualDensity: VisualDensity.compact,
                         ),
                       ),
@@ -206,7 +191,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const SnsLoginScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const SnsLoginScreen(),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -252,7 +239,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const FindIdScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const FindIdScreen(),
+                            ),
                           );
                         },
                         style: TextButton.styleFrom(
@@ -260,13 +249,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('이메일 찾기', style: TextStyle(color: labelColor)),
+                        child: const Text(
+                          '이메일 찾기',
+                          style: TextStyle(color: labelColor),
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const FindPasswordScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const FindPasswordScreen(),
+                            ),
                           );
                         },
                         style: TextButton.styleFrom(
@@ -274,7 +268,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('비밀번호 찾기', style: TextStyle(color: labelColor)),
+                        child: const Text(
+                          '비밀번호 찾기',
+                          style: TextStyle(color: labelColor),
+                        ),
                       ),
                     ],
                   ),
