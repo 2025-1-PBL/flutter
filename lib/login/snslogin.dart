@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'join1.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../api/social_login_service.dart';
 
 class SnsLoginScreen extends StatelessWidget {
   const SnsLoginScreen({super.key});
@@ -25,10 +24,7 @@ class SnsLoginScreen extends StatelessWidget {
                   Container(
                     height: 220,
                     alignment: Alignment.center,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                   ),
 
                   // 타이틀
@@ -52,14 +48,17 @@ class SnsLoginScreen extends StatelessWidget {
                     textColor: Colors.black,
                     icon: Icons.chat_bubble_outline,
                     onPressed: () async {
-                      final baseUrl = Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://127.0.0.1:8080';
-                      final authUrl = '$baseUrl/oauth2/authorization/kakao';
-                      if (await canLaunch(authUrl)) {
-                        await launch(authUrl);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('카카오 로그인 URL을 열 수 없습니다.')),
-                        );
+                      try {
+                        await SocialLoginService.kakaoLogin();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('카카오 로그인 실패: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       }
                     },
                   ),
@@ -72,10 +71,19 @@ class SnsLoginScreen extends StatelessWidget {
                     textColor: Colors.black87,
                     icon: Icons.g_mobiledata,
                     border: Border.all(color: Colors.grey.shade300),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('구글 소셜 로그인은 아직 구현되지 않았습니다.')),
-                      );
+                    onPressed: () async {
+                      try {
+                        await SocialLoginService.googleLogin();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('구글 로그인 실패: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
                     },
                   ),
                   const SizedBox(height: 10),
@@ -87,14 +95,17 @@ class SnsLoginScreen extends StatelessWidget {
                     textColor: Colors.white,
                     icon: Icons.nat,
                     onPressed: () async {
-                      final baseUrl = Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://127.0.0.1:8080';
-                      final authUrl = '$baseUrl/oauth2/authorization/naver';
-                      if (await canLaunch(authUrl)) {
-                        await launch(authUrl);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('네이버 로그인 URL을 열 수 없습니다.')),
-                        );
+                      try {
+                        await SocialLoginService.naverLogin();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('네이버 로그인 실패: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       }
                     },
                   ),
@@ -108,7 +119,11 @@ class SnsLoginScreen extends StatelessWidget {
                     },
                     child: const Text(
                       '다른 방법으로 로그인',
-                      style: TextStyle(fontSize: 14, color: Color(0xFFFFA724), fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFFFFA724),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

@@ -3,6 +3,7 @@ import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_next_nav_bar.dart';
 import '../home/home_screen.dart';
 import '../api/auth_service.dart';
+import 'start.dart';
 
 class Join2Screen extends StatefulWidget {
   const Join2Screen({super.key});
@@ -18,7 +19,6 @@ class _Join2ScreenState extends State<Join2Screen> {
   final _nicknameController = TextEditingController();
   final _nameController = TextEditingController();
   final _birthController = TextEditingController();
-  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
 
   final AuthService _authService = AuthService();
@@ -38,7 +38,6 @@ class _Join2ScreenState extends State<Join2Screen> {
         _nicknameController.text.isNotEmpty &&
         _nameController.text.isNotEmpty &&
         _birthController.text.isNotEmpty &&
-        _emailController.text.isNotEmpty &&
         _phoneController.text.isNotEmpty;
 
     final pwMatch = _pwController.text == _pwConfirmController.text;
@@ -47,6 +46,25 @@ class _Join2ScreenState extends State<Join2Screen> {
       isFormValid = isValid && pwMatch;
       isPasswordMatch = pwMatch;
     });
+
+    // 디버깅 로그
+    print('폼 유효성 검사:');
+    print('  이메일: ${_idController.text.isNotEmpty} (${_idController.text})');
+    print('  비밀번호: ${_pwController.text.isNotEmpty}');
+    print('  비밀번호 확인: ${_pwConfirmController.text.isNotEmpty}');
+    print(
+      '  닉네임: ${_nicknameController.text.isNotEmpty} (${_nicknameController.text})',
+    );
+    print('  이름: ${_nameController.text.isNotEmpty} (${_nameController.text})');
+    print(
+      '  생년월일: ${_birthController.text.isNotEmpty} (${_birthController.text})',
+    );
+    print(
+      '  휴대폰: ${_phoneController.text.isNotEmpty} (${_phoneController.text})',
+    );
+    print('  비밀번호 일치: $pwMatch');
+    print('  전체 유효성: $isValid');
+    print('  최종 유효성: ${isValid && pwMatch}');
   }
 
   @override
@@ -59,7 +77,6 @@ class _Join2ScreenState extends State<Join2Screen> {
       _nicknameController,
       _nameController,
       _birthController,
-      _emailController,
       _phoneController,
     ].forEach((controller) {
       controller.addListener(_validateForm);
@@ -83,7 +100,6 @@ class _Join2ScreenState extends State<Join2Screen> {
     _nicknameController.dispose();
     _nameController.dispose();
     _birthController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -209,12 +225,6 @@ class _Join2ScreenState extends State<Join2Screen> {
       return;
     }
 
-    // 중복확인 완료 여부 확인
-    if (!_emailChecked) {
-      _showErrorSnackBar('이메일 중복확인을 완료해주세요.');
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
@@ -240,14 +250,49 @@ class _Join2ScreenState extends State<Join2Screen> {
 
       await _authService.signup(userData);
 
-      // 회원가입 성공 시 홈 화면으로 이동
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const HomeScreen(showSignupComplete: true),
-          ),
-        );
+      // 회원가입 성공 후 자동 로그인
+      try {
+        print('회원가입 성공, 자동 로그인 시작...');
+        await _authService.login(email, password);
+        print('자동 로그인 성공');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('회원가입이 완료되었습니다. 자동으로 로그인되었습니다.'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 3),
+            ),
+          );
+
+          // 홈 화면으로 이동
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const HomeScreen(showSignupComplete: true),
+            ),
+          );
+        }
+      } catch (loginError) {
+        print('자동 로그인 실패: $loginError');
+        // 자동 로그인 실패 시에도 회원가입은 성공했으므로 로그인 화면으로 이동
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('회원가입이 완료되었습니다. 로그인해주세요.'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 3),
+            ),
+          );
+
+          // 로그인 화면으로 이동
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

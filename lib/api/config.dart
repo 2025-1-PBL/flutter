@@ -2,6 +2,10 @@ class ApiConfig {
   // 서버 기본 URL
   static const String baseUrl = 'http://127.0.0.1:8080/api';
 
+  // 소셜 로그인용 URL (API 경로 제외)
+  static const String socialLoginBaseUrl = 'http://127.0.0.1:8080';
+  static const String socialLoginAndroidUrl = 'http://10.0.2.2:8080';
+
   // 개별 서비스별 URL (필요시 사용)
   static const String authUrl = baseUrl;
   static const String scheduleUrl = '$baseUrl/schedules';

@@ -47,5 +47,18 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
+		
+		<!-- OAuth2 딥링크 설정 -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>oauth2</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>mapmo</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>
