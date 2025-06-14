@@ -6,6 +6,8 @@ import 'package:mapmoa/mypage/my_info_edit_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_page.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -29,10 +31,16 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> posts = [];
   bool _isLoadingPosts = true;
 
+  // 지도 관련 상태 변수들
+  bool _isMapInitialized = false;
+  NaverMapController? _mapController;
+  NLatLng? _currentLocation;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _initializeMap();
 
     if (widget.showSignupComplete) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -190,6 +198,82 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  Future<void> _initializeMap() async {
+    try {
+      // 네이버 지도 초기화
+      final naverMap = FlutterNaverMap();
+      await naverMap.init(clientId: 'til8qbn0pj');
+
+      setState(() {
+        _isMapInitialized = true;
+      });
+
+      // 현재 위치 가져오기
+      await _getCurrentLocation();
+    } catch (e) {
+      print('지도 초기화 실패: $e');
+      // 기본 위치 설정 (서울 시청)
+      setState(() {
+        _currentLocation = const NLatLng(37.5665, 126.9780);
+        _isMapInitialized = true;
+      });
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      // 위치 서비스가 활성화되어 있는지 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('위치 서비스가 비활성화되어 있습니다.');
+        _setDefaultLocation();
+        return;
+      }
+
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('위치 권한이 거부되었습니다.');
+          _setDefaultLocation();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('위치 권한이 영구적으로 거부되었습니다.');
+        _setDefaultLocation();
+        return;
+      }
+
+      // 현재 위치 가져오기
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      setState(() {
+        _currentLocation = NLatLng(position.latitude, position.longitude);
+      });
+    } catch (e) {
+      print('위치 가져오기 실패: $e');
+      _setDefaultLocation();
+    }
+  }
+
+  void _setDefaultLocation() {
+    setState(() {
+      _currentLocation = const NLatLng(37.5665, 126.9780); // 서울 시청
+    });
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -417,11 +501,36 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: _boxDecoration(),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            'assets/map.png',
-            fit: BoxFit.cover,
-            width: double.infinity,
-          ),
+          child:
+              _isMapInitialized && _currentLocation != null
+                  ? NaverMap(
+                    onMapReady: (controller) {
+                      _mapController = controller;
+                      // 현재 위치로 카메라 이동
+                      final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+                        target: _currentLocation!,
+                        zoom: 13, // 홈 화면에서는 조금 더 넓은 뷰
+                      );
+                      _mapController!.updateCamera(cameraUpdate);
+                    },
+                  )
+                  : Container(
+                    height: 200,
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: Color(0xFFFFA724)),
+                          SizedBox(height: 8),
+                          Text(
+                            '지도를 불러오는 중...',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
         ),
       ),
     );
