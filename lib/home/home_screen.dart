@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapmoa/api/schedule_service.dart';
 import 'package:mapmoa/api/auth_service.dart';
+import 'package:mapmoa/api/article_service.dart';
 import 'package:mapmoa/mypage/my_info_edit_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
@@ -17,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   final AuthService _authService = AuthService();
+  final ArticleService _articleService = ArticleService();
 
   List<Map<String, dynamic>> allSchedules = [];
   final List<bool> _checked = [];
@@ -25,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _currentUser;
 
   List<Map<String, dynamic>> posts = [];
+  bool _isLoadingPosts = true;
 
   @override
   void initState() {
@@ -70,10 +73,38 @@ class _HomeScreenState extends State<HomeScreen> {
             };
           }).toList();
 
+      // 게시글 목록 가져오기 (최신 5개만)
+      List<Map<String, dynamic>> articlePosts = [];
+      try {
+        final articleResponse = await _articleService.getAllArticles(
+          page: 0,
+          size: 5,
+        );
+        final articles = articleResponse['content'] as List<dynamic>;
+
+        articlePosts =
+            articles.map((article) {
+              return {
+                'id': article['id'],
+                'title': article['title'] ?? '',
+                'content': article['content'] ?? '',
+                'location': article['location'] ?? '',
+                'likes': article['likeCount'] ?? 0,
+                'author': article['author'] ?? '',
+                'createdAt': article['createdAt'],
+              };
+            }).toList();
+      } catch (e) {
+        print('게시글 로딩 실패: $e');
+        // 게시글 로딩 실패해도 일정은 계속 표시
+      }
+
       setState(() {
         allSchedules = scheduleMaps.reversed.toList();
         _checked.addAll(List.generate(allSchedules.length, (_) => false));
+        posts = articlePosts;
         _isLoading = false;
+        _isLoadingPosts = false;
       });
     } catch (e) {
       print('데이터 로딩 실패: $e');
@@ -91,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
+        _isLoadingPosts = false;
       });
     }
   }
@@ -169,63 +201,71 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFFAFAFA),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.only(
-              top: 40,
-              left: 40,
-              right: 40,
-              bottom: 16,
-            ),
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MyInfoEditScreen(),
-                      ),
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 42,
-                        backgroundColor: const Color(0xFFE0E0E0),
-                        child: const Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.white,
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          color: const Color(0xFFFFA724),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: 40,
+                left: 40,
+                right: 40,
+                bottom: 16,
+              ),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyInfoEditScreen(),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Column(
-                        children: [
-                          Text(
-                            '${_currentUser?['name'] ?? '사용자'} 님',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                      );
+                      // 마이페이지에서 돌아온 후 데이터 새로고침
+                      if (mounted) {
+                        await _loadData();
+                      }
+                    },
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 42,
+                          backgroundColor: const Color(0xFFE0E0E0),
+                          child: const Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Column(
+                          children: [
+                            Text(
+                              '${_currentUser?['name'] ?? '사용자'} 님',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '오늘은 ${allSchedules.length}개의 일정이 있어요!',
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(height: 4),
+                            Text(
+                              '오늘은 ${allSchedules.length}개의 일정이 있어요!',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(height: boxHeight, child: _buildScheduleCard()),
-                const SizedBox(height: 16),
-                SizedBox(height: boxHeight, child: _buildMapCard()),
-                const SizedBox(height: 16),
-                SizedBox(height: boxHeight, child: _buildCommunityCard()),
-              ],
+                  const SizedBox(height: 16),
+                  SizedBox(height: boxHeight, child: _buildScheduleCard()),
+                  const SizedBox(height: 16),
+                  SizedBox(height: boxHeight, child: _buildMapCard()),
+                  const SizedBox(height: 16),
+                  SizedBox(height: boxHeight, child: _buildCommunityCard()),
+                ],
+              ),
             ),
           ),
         ),
@@ -399,11 +439,24 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: _boxDecoration(),
         padding: const EdgeInsets.symmetric(vertical: 12),
         child:
-            posts.isEmpty
+            _isLoadingPosts
                 ? const Center(
-                  child: Text(
-                    '등록된 게시물이 없습니다.',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFFA724),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+                : posts.isEmpty
+                ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      '등록된 게시물이 없습니다.',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
                   ),
                 )
                 : ListView.builder(
@@ -438,13 +491,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                posts[index]['location'],
+                                posts[index]['location'] ?? '',
                                 style: const TextStyle(fontSize: 14),
                               ),
                               const SizedBox(width: 5),
                               Expanded(
                                 child: Text(
-                                  posts[index]['title'],
+                                  posts[index]['title'] ?? '',
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,

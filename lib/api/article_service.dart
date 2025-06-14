@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'config.dart';
+import 'auth_service.dart';
 
 class ArticleService {
   final Dio _dio = Dio();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.read(key: 'token');
@@ -17,12 +19,83 @@ class ArticleService {
     };
   }
 
+  // 토큰 만료 여부 확인
+  bool _isTokenExpired(DioException e) {
+    return e.response?.statusCode == 401 ||
+        e.response?.statusCode == 403 ||
+        e.message?.contains('만료된 JWT 토큰') == true ||
+        e.message?.contains('유효한 JWT 토큰이 없습니다') == true;
+  }
+
+  // API 호출 시 토큰 만료 처리
+  Future<T> _handleApiCall<T>(Future<T> Function() apiCall) async {
+    try {
+      return await apiCall();
+    } catch (e) {
+      if (e is DioException) {
+        final statusCode = e.response?.statusCode;
+        final responseData = e.response?.data;
+
+        print('API 호출 실패 - 상태 코드: $statusCode');
+        print('API 호출 실패 - 응답 데이터: $responseData');
+
+        // 토큰 만료 에러 처리
+        if (_isTokenExpired(e)) {
+          try {
+            await _authService.refreshToken();
+            // 갱신 성공 시 새로운 토큰으로 다시 시도
+            return await apiCall();
+          } catch (refreshError) {
+            throw Exception('토큰이 만료되었습니다. 다시 로그인해주세요.');
+          }
+        }
+
+        // 서버 에러 처리 (500, 502, 503 등)
+        if (statusCode != null && statusCode >= 500) {
+          String errorMessage = '서버 오류가 발생했습니다.';
+
+          // 백엔드에서 구체적인 에러 메시지가 있는 경우
+          if (responseData != null && responseData is Map) {
+            final message = responseData['message'] ?? responseData['error'];
+            if (message != null) {
+              errorMessage = message.toString();
+            }
+          }
+
+          // 500 에러의 경우 백엔드 문제임을 명시
+          if (statusCode == 500) {
+            errorMessage = '서버 내부 오류가 발생했습니다. 백엔드 개발팀에 문의해주세요.';
+          }
+
+          throw Exception(errorMessage);
+        }
+
+        // 기타 HTTP 에러 처리
+        if (statusCode != null) {
+          String errorMessage = '요청 처리 중 오류가 발생했습니다.';
+
+          if (responseData != null && responseData is Map) {
+            final message = responseData['message'] ?? responseData['error'];
+            if (message != null) {
+              errorMessage = message.toString();
+            }
+          }
+
+          throw Exception(errorMessage);
+        }
+      }
+
+      // 기타 예외 처리
+      throw Exception('게시글 처리 중 오류가 발생했습니다: ${e.toString()}');
+    }
+  }
+
   // 모든 게시글 조회 (페이징)
   Future<Map<String, dynamic>> getAllArticles({
     int page = 0,
     int size = 10,
   }) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         ApiConfig.articleUrl,
@@ -30,30 +103,26 @@ class ArticleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      throw Exception('게시글 목록을 불러오는데 실패했습니다: $e');
-    }
+    });
   }
 
   // 게시글 상세 조회
   Future<Map<String, dynamic>> getArticleById(int articleId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '${ApiConfig.articleUrl}/$articleId',
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      throw Exception('게시글을 불러오는데 실패했습니다: $e');
-    }
+    });
   }
 
   // 게시글 작성
   Future<Map<String, dynamic>> createArticle(
     Map<String, dynamic> articleData,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.post(
         ApiConfig.articleUrl,
@@ -61,9 +130,7 @@ class ArticleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      throw Exception('게시글 작성에 실패했습니다: $e');
-    }
+    });
   }
 
   // 게시글 수정
@@ -71,7 +138,7 @@ class ArticleService {
     int articleId,
     Map<String, dynamic> articleData,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.put(
         '${ApiConfig.articleUrl}/$articleId',
@@ -79,76 +146,42 @@ class ArticleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 403) {
-          throw Exception('게시글을 수정할 권한이 없습니다.');
-        }
-        if (e.response?.statusCode == 404) {
-          throw Exception('게시글을 찾을 수 없습니다.');
-        }
-      }
-      throw Exception('게시글 수정에 실패했습니다: $e');
-    }
+    });
   }
 
   // 게시글 삭제
   Future<void> deleteArticle(int articleId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       await _dio.delete(
         '${ApiConfig.articleUrl}/$articleId',
         options: Options(headers: headers),
       );
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 403) {
-          throw Exception('게시글을 삭제할 권한이 없습니다.');
-        }
-        if (e.response?.statusCode == 404) {
-          throw Exception('게시글을 찾을 수 없습니다.');
-        }
-      }
-      throw Exception('게시글 삭제에 실패했습니다: $e');
-    }
+    });
   }
 
   // 게시글 좋아요
   Future<Map<String, dynamic>> likeArticle(int articleId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.post(
         '${ApiConfig.articleUrl}/$articleId/like',
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 404) {
-          throw Exception('게시글을 찾을 수 없습니다.');
-        }
-      }
-      throw Exception('좋아요 등록에 실패했습니다: $e');
-    }
+    });
   }
 
   // 게시글 싫어요
   Future<Map<String, dynamic>> dislikeArticle(int articleId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.post(
         '${ApiConfig.articleUrl}/$articleId/dislike',
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 404) {
-          throw Exception('게시글을 찾을 수 없습니다.');
-        }
-      }
-      throw Exception('싫어요 등록에 실패했습니다: $e');
-    }
+    });
   }
 
   // 주변 게시글 찾기
@@ -157,7 +190,7 @@ class ArticleService {
     double longitude,
     double radius,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '${ApiConfig.articleUrl}/nearby',
@@ -169,9 +202,7 @@ class ArticleService {
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
-    } catch (e) {
-      throw Exception('주변 게시글을 불러오는데 실패했습니다: $e');
-    }
+    });
   }
 
   // 제목으로 게시글 검색
@@ -180,7 +211,7 @@ class ArticleService {
     int page = 0,
     int size = 10,
   }) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '${ApiConfig.articleUrl}/search/title',
@@ -188,9 +219,7 @@ class ArticleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      throw Exception('게시글 검색에 실패했습니다: $e');
-    }
+    });
   }
 
   // 내용으로 게시글 검색
@@ -199,7 +228,7 @@ class ArticleService {
     int page = 0,
     int size = 10,
   }) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '${ApiConfig.articleUrl}/search/content',
@@ -207,8 +236,6 @@ class ArticleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      throw Exception('게시글 검색에 실패했습니다: $e');
-    }
+    });
   }
 }
