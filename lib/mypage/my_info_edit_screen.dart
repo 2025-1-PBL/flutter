@@ -210,7 +210,8 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                       const Text('|', style: TextStyle(color: Colors.grey)),
                       const SizedBox(width: 8),
                       GestureDetector(
-                        onTap: () {
+                        onTap: () async {
+                          // 로그아웃 확인 다이얼로그 표시
                           showDialog(
                             context: context,
                             barrierDismissible: false,

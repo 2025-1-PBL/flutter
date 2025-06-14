@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../login/start.dart';
+import '../api/auth_service.dart';
 
 /// 로그아웃 및 탈퇴 팝업 (예/아니오 공용)
 class LogoutPopup extends StatelessWidget {
@@ -27,17 +28,12 @@ class LogoutPopup extends StatelessWidget {
           children: [
             Text(
               message,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 5),
             Text(
-              isWithdrawal
-                  ? '탈퇴하시게 되면 계정 복구가 불가능합니다.'
-                  : '이후에 다시 로그인 하셔야 합니다.',
+              isWithdrawal ? '탈퇴하시게 되면 계정 복구가 불가능합니다.' : '이후에 다시 로그인 하셔야 합니다.',
               style: const TextStyle(fontSize: 14, color: Colors.black54),
               textAlign: TextAlign.center,
             ),
@@ -46,20 +42,63 @@ class LogoutPopup extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.of(context).pop();
-                      Navigator.pushAndRemoveUntil(
-                        rootContext,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                            (route) => false,
-                      );
+
+                      if (!isWithdrawal) {
+                        // 로그아웃 처리
+                        try {
+                          final authService = AuthService();
+                          await authService.logout();
+
+                          if (rootContext.mounted) {
+                            ScaffoldMessenger.of(rootContext).showSnackBar(
+                              const SnackBar(
+                                content: Text('로그아웃되었습니다.'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Color(0xFF4CAF50),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (rootContext.mounted) {
+                            ScaffoldMessenger.of(rootContext).showSnackBar(
+                              SnackBar(
+                                content: Text('로그아웃 중 오류가 발생했습니다: $e'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                      }
+
+                      // 로그인 화면으로 이동
+                      if (rootContext.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          rootContext,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(
+                        color: const Color(0xFF2B1D1D).withOpacity(0.5),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('예', style: TextStyle(color: Colors.black)),
+                    child: const Text(
+                      '예',
+                      style: TextStyle(color: Colors.black),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -69,10 +108,15 @@ class LogoutPopup extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFA724),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('아니요', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      '아니요',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -110,10 +154,7 @@ class InquiryPopup extends StatelessWidget {
             const SizedBox(height: 5),
             const Text(
               '문의 주시면 빠르게 답변해 드리겠습니다.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.black54),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -122,15 +163,24 @@ class InquiryPopup extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      Clipboard.setData(const ClipboardData(text: 'abcd123@naver.com'));
+                      Clipboard.setData(
+                        const ClipboardData(text: 'abcd123@naver.com'),
+                      );
                       Navigator.of(context).pop();
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(
+                        color: const Color(0xFF2B1D1D).withOpacity(0.5),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('복사하기', style: TextStyle(color: Colors.black)),
+                    child: const Text(
+                      '복사하기',
+                      style: TextStyle(color: Colors.black),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -139,10 +189,15 @@ class InquiryPopup extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFA724),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('닫기', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      '닫기',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -189,15 +244,24 @@ class StoreEventRequestPopup extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      Clipboard.setData(const ClipboardData(text: 'abcd123@naver.com'));
+                      Clipboard.setData(
+                        const ClipboardData(text: 'abcd123@naver.com'),
+                      );
                       Navigator.of(context).pop();
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: const Color(0xFF2B1D1D).withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(
+                        color: const Color(0xFF2B1D1D).withOpacity(0.5),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('복사하기', style: TextStyle(color: Colors.black)),
+                    child: const Text(
+                      '복사하기',
+                      style: TextStyle(color: Colors.black),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -206,10 +270,15 @@ class StoreEventRequestPopup extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFA724),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('닫기', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      '닫기',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
