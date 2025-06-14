@@ -152,35 +152,90 @@ class _MapMainPageState extends State<MapMainPage> {
   }
 
   Future<void> _checkPermissionAndGetLocation() async {
-    var status = await Permission.location.status;
-    if (!status.isGranted) {
-      status = await Permission.location.request();
-      if (!status.isGranted) return;
-    }
+    try {
+      // 위치 서비스가 활성화되어 있는지 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('위치 서비스가 비활성화되어 있습니다.');
+        _setDefaultLocation();
+        return;
+      }
 
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('위치 권한이 거부되었습니다.');
+          _setDefaultLocation();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('위치 권한이 영구적으로 거부되었습니다.');
+        _setDefaultLocation();
+        return;
+      }
+
+      // 현재 위치 가져오기
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10), // 10초 타임아웃
+      );
+
+      setState(() {
+        _currentLocation = NLatLng(position.latitude, position.longitude);
+      });
+
+      if (_mapController != null && _currentLocation != null) {
+        final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+          target: _currentLocation!,
+          zoom: 15,
+        )..setAnimation();
+
+        await _mapController!.updateCamera(cameraUpdate);
+
+        if (_locationIcon != null) {
+          final locationMarker = NMarker(
+            id: 'current_location',
+            position: _currentLocation!,
+            icon: _locationIcon!,
+          );
+          await _mapController!.addOverlay(locationMarker);
+        }
+      }
+    } catch (e) {
+      print('위치 가져오기 실패: $e');
+      _setDefaultLocation();
+    }
+  }
+
+  // 기본 위치 설정 (서울 시청)
+  void _setDefaultLocation() {
     setState(() {
-      _currentLocation = NLatLng(position.latitude, position.longitude);
+      _currentLocation = const NLatLng(37.5665, 126.9780); // 서울 시청
     });
 
     if (_mapController != null && _currentLocation != null) {
       final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
         target: _currentLocation!,
-        zoom: 15,
+        zoom: 12, // 서울 전체가 보이도록 줌 레벨 조정
       )..setAnimation();
 
-      await _mapController!.updateCamera(cameraUpdate);
+      _mapController!.updateCamera(cameraUpdate);
+    }
 
-      if (_locationIcon != null) {
-        final locationMarker = NMarker(
-          id: 'current_location',
-          position: _currentLocation!,
-          icon: _locationIcon!,
-        );
-        await _mapController!.addOverlay(locationMarker);
-      }
+    // 사용자에게 알림
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('위치 정보를 가져올 수 없어 서울 시청을 기본 위치로 설정했습니다.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -384,29 +439,52 @@ class _MapMainPageState extends State<MapMainPage> {
   }
 
   Future<void> _goToCurrentLocation() async {
-    var status = await Permission.location.status;
-    if (!status.isGranted) {
-      status = await Permission.location.request();
-      if (!status.isGranted) {
-        _showSnackBar('위치 권한이 필요합니다.');
+    try {
+      // 위치 서비스가 활성화되어 있는지 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showSnackBar('위치 서비스를 활성화해주세요.');
         return;
       }
+
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showSnackBar('위치 권한이 필요합니다.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showSnackBar('설정에서 위치 권한을 허용해주세요.');
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+      final latLng = NLatLng(position.latitude, position.longitude);
+
+      setState(() {
+        _currentLocation = latLng;
+      });
+
+      final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+        target: latLng,
+        zoom: 15,
+      )..setAnimation();
+
+      await _mapController?.updateCamera(cameraUpdate);
+      await _refreshAllMarkers();
+
+      _showSnackBar('현재 위치로 이동했습니다.');
+    } catch (e) {
+      print('현재 위치 이동 실패: $e');
+      _showSnackBar('위치를 가져오는데 실패했습니다.');
     }
-
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-    final latLng = NLatLng(position.latitude, position.longitude);
-
-    setState(() {
-      _currentLocation = latLng;
-    });
-
-    final cameraUpdate = NCameraUpdate.scrollAndZoomTo(target: latLng, zoom: 15)
-      ..setAnimation();
-
-    await _mapController?.updateCamera(cameraUpdate);
-    await _refreshAllMarkers();
   }
 
   Future<void> _goToLocation(NLatLng location) async {
