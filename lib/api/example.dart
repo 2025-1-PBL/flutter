@@ -4,7 +4,7 @@ import 'user_service.dart';
 import 'schedule_service.dart';
 import 'shared_schedule_service.dart';
 import 'article_service.dart';
-import 'comment_service.dart';
+import 'api/comment_service.dart';
 import 'brand_service.dart';
 
 class ApiExample extends StatelessWidget {

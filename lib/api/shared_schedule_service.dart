@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SharedScheduleService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/shared-schedules';
+  final String _baseUrl = 'http://ocb.iptime.org:8080/api/shared-schedules';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {

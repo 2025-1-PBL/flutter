@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api';
+  final String _baseUrl = 'http://ocb.iptime.org:8080/api';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 로그인
@@ -15,8 +15,15 @@ class AuthService {
       );
 
       // 토큰 저장
+
       final accessToken = response.data['accessToken'];
       final refreshToken = response.data['refreshToken'];
+
+      print("accessToken");
+      print(accessToken);
+      print("refreshToken");
+      print(refreshToken);
+
       await _storage.write(key: 'accessToken', value: accessToken);
       await _storage.write(key: 'refreshToken', value: refreshToken);
 
@@ -40,6 +47,10 @@ class AuthService {
   Future<Map<String, dynamic>> refreshToken() async {
     try {
       final refreshToken = await _storage.read(key: 'refreshToken');
+
+      print("refresh --> refreshToken: ");
+      print(refreshToken);
+
       if (refreshToken == null) {
         throw Exception('리프레시 토큰이 없습니다.');
       }
@@ -51,6 +62,10 @@ class AuthService {
 
       // 새로운 토큰 저장
       final accessToken = response.data['accessToken'];
+
+      print("refresh --> accessToken: ");
+      print(accessToken);
+
       await _storage.write(key: 'accessToken', value: accessToken);
 
       return response.data;
@@ -63,6 +78,8 @@ class AuthService {
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       final token = await _storage.read(key: 'accessToken');
+      print(token);
+
       if (token == null) {
         throw Exception('토큰이 없습니다.');
       }
@@ -72,8 +89,11 @@ class AuthService {
         'Authorization': 'Bearer $token',
       };
 
+      print(headers);
+      print("$_baseUrl/users/current-user");
+
       final response = await _dio.get(
-        '$_baseUrl/oauth/current-user',
+        '$_baseUrl/users/current-user',
         options: Options(headers: headers),
       );
 
