@@ -26,9 +26,6 @@ class AuthService {
     }
   }
 
-  //eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaXM5NzcyQG5hdmVyLmNvbSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3NDk4MjIyNDV9.2HnuEnLT2yALt7IGs_AWDKIb-YAFw1xRTV-NlVehpURkutJ2Zo1fgYCmkMYHW5KQJYrdxzeAxSkLSB3Ar0w8rA
-  //eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaXM5NzcyQG5hdmVyLmNvbSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3NDk4MjIyNDV9.2HnuEnLT2yALt7IGs_AWDKIb-YAFw1xRTV-NlVehpURkutJ2Zo1fgYCmkMYHW5KQJYrdxzeAxSkLSB3Ar0w8rA
-
   // 회원가입
   Future<Map<String, dynamic>> signup(Map<String, dynamic> userData) async {
     try {
@@ -39,6 +36,32 @@ class AuthService {
       return response.data;
     } catch (e) {
       throw Exception('회원가입에 실패했습니다: $e');
+    }
+  }
+
+  // 이메일 중복확인
+  Future<Map<String, dynamic>> checkEmailDuplicate(String email) async {
+    try {
+      // 이메일을 URL 인코딩
+      final encodedEmail = Uri.encodeComponent(email);
+      final response = await _dio.get(
+        '${ApiConfig.authUrl}/check-email/$encodedEmail',
+      );
+      return response.data;
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 404) {
+          // 404 오류 시 - 엔드포인트가 없거나 서버 문제
+          throw Exception('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        } else if (e.response?.statusCode == 409) {
+          // 이미 존재하는 이메일
+          return {'available': false, 'message': '이미 사용 중인 이메일입니다.'};
+        } else if (e.response?.statusCode == 500) {
+          // 서버 내부 오류
+          throw Exception('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
+      throw Exception('이메일 중복확인에 실패했습니다: $e');
     }
   }
 

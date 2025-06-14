@@ -29,7 +29,6 @@ class _Join2ScreenState extends State<Join2Screen> {
   bool isPasswordMatch = true;
   bool _isLoading = false;
   bool _emailChecked = false;
-  bool _nicknameChecked = false;
 
   void _validateForm() {
     final isValid =
@@ -71,14 +70,6 @@ class _Join2ScreenState extends State<Join2Screen> {
       if (_emailChecked) {
         setState(() {
           _emailChecked = false;
-        });
-      }
-    });
-
-    _nicknameController.addListener(() {
-      if (_nicknameChecked) {
-        setState(() {
-          _nicknameChecked = false;
         });
       }
     });
@@ -162,11 +153,7 @@ class _Join2ScreenState extends State<Join2Screen> {
                             ),
                           ),
                         const SizedBox(height: 5),
-                        _buildTextField(
-                          '닉네임*',
-                          _nicknameController,
-                          showCheckButton: true,
-                        ),
+                        _buildTextField('닉네임*', _nicknameController),
                         const SizedBox(height: 15),
                         const Text(
                           '개인정보',
@@ -225,11 +212,6 @@ class _Join2ScreenState extends State<Join2Screen> {
     // 중복확인 완료 여부 확인
     if (!_emailChecked) {
       _showErrorSnackBar('이메일 중복확인을 완료해주세요.');
-      return;
-    }
-
-    if (!_nicknameChecked) {
-      _showErrorSnackBar('닉네임 중복확인을 완료해주세요.');
       return;
     }
 
@@ -310,8 +292,6 @@ class _Join2ScreenState extends State<Join2Screen> {
     bool isChecked = false;
     if (label == '이메일*') {
       isChecked = _emailChecked;
-    } else if (label == '닉네임*') {
-      isChecked = _nicknameChecked;
     }
 
     return Row(
@@ -372,8 +352,6 @@ class _Join2ScreenState extends State<Join2Screen> {
                       : () {
                         if (label == '이메일*') {
                           _checkEmailDuplicate();
-                        } else if (label == '닉네임*') {
-                          _checkNicknameDuplicate();
                         }
                       },
               style: ElevatedButton.styleFrom(
@@ -485,37 +463,10 @@ class _Join2ScreenState extends State<Join2Screen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // 이메일 중복확인은 회원가입 시 서버에서 처리
-      // 여기서는 간단한 이메일 형식 검증만 수행
-      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-      if (!emailRegex.hasMatch(email)) {
-        _showErrorSnackBar('올바른 이메일 형식을 입력해주세요.');
-        return;
-      }
-
-      setState(() {
-        _emailChecked = true;
-      });
-
-      _showSuccessSnackBar('사용 가능한 이메일입니다.');
-    } catch (e) {
-      _showErrorSnackBar('이메일 확인에 실패했습니다: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _checkNicknameDuplicate() async {
-    final nickname = _nicknameController.text.trim();
-    if (nickname.isEmpty) {
-      _showErrorSnackBar('닉네임을 입력해주세요.');
+    // 이메일 형식 검증
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      _showErrorSnackBar('올바른 이메일 형식을 입력해주세요.');
       return;
     }
 
@@ -524,20 +475,43 @@ class _Join2ScreenState extends State<Join2Screen> {
     });
 
     try {
-      // 닉네임 중복확인은 회원가입 시 서버에서 처리
-      // 여기서는 간단한 길이 검증만 수행
-      if (nickname.length < 2 || nickname.length > 20) {
-        _showErrorSnackBar('닉네임은 2-20자 사이로 입력해주세요.');
-        return;
-      }
+      print('이메일 중복확인 시작: $email');
 
+      // 실제 API 호출
+      final result = await _authService.checkEmailDuplicate(email);
+      final isAvailable = result['available'] as bool;
+      final message = result['message'] as String;
+
+      print('이메일 중복확인 결과: available=$isAvailable, message=$message');
+
+      if (isAvailable) {
+        setState(() {
+          _emailChecked = true;
+        });
+        _showSuccessSnackBar(message);
+      } else {
+        setState(() {
+          _emailChecked = false;
+        });
+        _showErrorSnackBar(message);
+      }
+    } catch (e) {
+      print('이메일 중복확인 오류: $e');
       setState(() {
-        _nicknameChecked = true;
+        _emailChecked = false;
       });
 
-      _showSuccessSnackBar('사용 가능한 닉네임입니다.');
-    } catch (e) {
-      _showErrorSnackBar('닉네임 확인에 실패했습니다: $e');
+      // 사용자 친화적인 에러 메시지
+      String errorMessage = '이메일 확인에 실패했습니다.';
+      if (e.toString().contains('서버 연결')) {
+        errorMessage = '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      } else if (e.toString().contains('서버 오류')) {
+        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      } else if (e.toString().contains('네트워크')) {
+        errorMessage = '네트워크 연결을 확인해주세요.';
+      }
+
+      _showErrorSnackBar(errorMessage);
     } finally {
       setState(() {
         _isLoading = false;
