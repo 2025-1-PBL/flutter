@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://ocb.iptime.org:8080/api';
+  final String _baseUrl = 'http://127.0.0.1:8080/api';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 로그인
@@ -14,17 +14,10 @@ class AuthService {
         data: {'username': username, 'password': password},
       );
 
-      // 토큰 저장
-
-      final accessToken = response.data['accessToken'];
+      final token = response.data['token'];
       final refreshToken = response.data['refreshToken'];
 
-      print("accessToken");
-      print(accessToken);
-      print("refreshToken");
-      print(refreshToken);
-
-      await _storage.write(key: 'accessToken', value: accessToken);
+      await _storage.write(key: 'token', value: token);
       await _storage.write(key: 'refreshToken', value: refreshToken);
 
       return response.data;
@@ -32,6 +25,9 @@ class AuthService {
       throw Exception('로그인에 실패했습니다: $e');
     }
   }
+
+  //eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaXM5NzcyQG5hdmVyLmNvbSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3NDk4MjIyNDV9.2HnuEnLT2yALt7IGs_AWDKIb-YAFw1xRTV-NlVehpURkutJ2Zo1fgYCmkMYHW5KQJYrdxzeAxSkLSB3Ar0w8rA
+  //eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaXM5NzcyQG5hdmVyLmNvbSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3NDk4MjIyNDV9.2HnuEnLT2yALt7IGs_AWDKIb-YAFw1xRTV-NlVehpURkutJ2Zo1fgYCmkMYHW5KQJYrdxzeAxSkLSB3Ar0w8rA
 
   // 회원가입
   Future<Map<String, dynamic>> signup(Map<String, dynamic> userData) async {
@@ -46,27 +42,31 @@ class AuthService {
   // 토큰 갱신
   Future<Map<String, dynamic>> refreshToken() async {
     try {
+      final token = await _storage.read(key: 'token');
       final refreshToken = await _storage.read(key: 'refreshToken');
 
-      print("refresh --> refreshToken: ");
+      print(token);
       print(refreshToken);
+
 
       if (refreshToken == null) {
         throw Exception('리프레시 토큰이 없습니다.');
       }
 
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
+
       final response = await _dio.post(
         '$_baseUrl/refresh',
         data: {'refreshToken': refreshToken},
+        options: Options(headers: headers),
       );
 
       // 새로운 토큰 저장
-      final accessToken = response.data['accessToken'];
-
-      print("refresh --> accessToken: ");
-      print(accessToken);
-
-      await _storage.write(key: 'accessToken', value: accessToken);
+      final newToken = response.data['token'];
+      await _storage.write(key: 'token', value: newToken);
 
       return response.data;
     } catch (e) {
@@ -77,20 +77,16 @@ class AuthService {
   // 현재 로그인한 사용자 정보 조회
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
-      final token = await _storage.read(key: 'accessToken');
-      print(token);
+      final token = await _storage.read(key: 'token');
+
 
       if (token == null) {
         throw Exception('토큰이 없습니다.');
       }
-
       final headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       };
-
-      print(headers);
-      print("$_baseUrl/users/current-user");
 
       final response = await _dio.get(
         '$_baseUrl/users/current-user',
@@ -99,13 +95,17 @@ class AuthService {
 
       return response.data;
     } catch (e) {
-      throw Exception('사용자 정보를 불러오는데 실패했습니다: $e');
+      print(e);
+      throw Exception('2용자 정보를 불러오는 데 실패했습니다: $e');
     }
   }
 
   // 로그아웃
   Future<void> logout() async {
-    await _storage.delete(key: 'accessToken');
+    await _storage.delete(key: 'token');
     await _storage.delete(key: 'refreshToken');
   }
 }
+
+
+

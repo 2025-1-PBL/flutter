@@ -5,6 +5,7 @@ import '../map/map_main.dart';
 import '../api/schedule_service.dart';
 import '../api/auth_service.dart';
 
+
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
   const HomeScreen({super.key, this.showSignupComplete = false});
@@ -19,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _schedules = [];
   Map<String, dynamic>? _currentUser;
   bool _isLoading = true;
+
 
   final List<Map<String, dynamic>> posts = [
     {'title': '[스타벅스] 3월 한 달간 30% 할인', 'location': '가좌동', 'likes': 4},
@@ -41,12 +43,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     try {
+
       setState(() {
         _isLoading = true;
       });
 
       // 현재 사용자 정보 가져오기
       final userData = await _authService.getCurrentUser();
+
       setState(() {
         _currentUser = userData;
       });

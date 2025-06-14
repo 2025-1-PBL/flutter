@@ -3,12 +3,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class BrandService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://ocb.iptime.org:8080/api/brands';
+  final String _baseUrl = 'http://127.0.0.1:8080/api/brands';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 헤더 가져오기
   Future<Map<String, String>> _getHeaders() async {
-    final token = await _storage.read(key: 'accessToken');
+    final token = await _storage.read(key: 'token');
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',

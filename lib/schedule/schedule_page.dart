@@ -33,7 +33,7 @@ class _SchedulePageState extends State<SchedulePage> {
     try {
       setState(() => _isLoading = true);
 
-      final currentUser = await _authService.getCurrentUser();
+      final currentUser = await _authService.refreshToken();
       final schedules = await _scheduleService.getAllSchedulesByUser(
         currentUser['id'],
       );

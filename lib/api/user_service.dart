@@ -3,11 +3,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class UserService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://ocb.iptime.org:8080/api/users';
+  final String _baseUrl = 'http://127.0.0.1:8080/api/users';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
-    final token = await _storage.read(key: 'accessToken');
+    final token = await _storage.read(key: 'token');
     if (token == null) {
       throw Exception('토큰이 없습니다.');
     }
