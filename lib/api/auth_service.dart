@@ -43,13 +43,14 @@ class AuthService {
   Future<Map<String, dynamic>> refreshToken() async {
     try {
       final token = await _storage.read(key: 'token');
-      final refreshToken = await _storage.read(key: 'refreshToken');
+      final storedRefreshToken = await _storage.read(key: 'refreshToken');
 
-      print(token);
-      print(refreshToken);
+      print('토큰 갱신 시작 - 현재 토큰: ${token?.substring(0, 20)}...');
+      print(
+        '토큰 갱신 시작 - refreshToken: ${storedRefreshToken?.substring(0, 20)}...',
+      );
 
-
-      if (refreshToken == null) {
+      if (storedRefreshToken == null) {
         throw Exception('리프레시 토큰이 없습니다.');
       }
 
@@ -60,43 +61,100 @@ class AuthService {
 
       final response = await _dio.post(
         '$_baseUrl/refresh',
-        data: {'refreshToken': refreshToken},
+        data: {'refreshToken': storedRefreshToken},
         options: Options(headers: headers),
       );
 
+      print('토큰 갱신 응답: ${response.statusCode}');
+      print('토큰 갱신 응답 데이터: ${response.data}');
+
       // 새로운 토큰 저장
       final newToken = response.data['token'];
+      print('새로운 토큰: ${newToken?.substring(0, 20)}...');
+
       await _storage.write(key: 'token', value: newToken);
+      print('토큰 저장 완료');
+
+      // 저장 완료를 기다림
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 저장된 토큰 확인
+      final savedToken = await _storage.read(key: 'token');
+      print('저장된 토큰 확인: ${savedToken?.substring(0, 20)}...');
 
       return response.data;
     } catch (e) {
+      print('토큰 갱신 실패: $e');
+      // 토큰 갱신 실패 시 저장된 토큰 삭제
+      await logout();
       throw Exception('토큰 갱신에 실패했습니다: $e');
     }
   }
 
-  // 현재 로그인한 사용자 정보 조회
+  // 토큰 만료 여부 확인
+  bool _isTokenExpired(DioException e) {
+    return e.response?.statusCode == 401 ||
+        e.response?.statusCode == 403 ||
+        e.message?.contains('만료된 JWT 토큰') == true ||
+        e.message?.contains('유효한 JWT 토큰이 없습니다') == true;
+  }
+
+  // 토큰이 만료되었는지 확인하고 필요시 갱신
+  Future<bool> _handleTokenExpiration() async {
+    try {
+      await refreshToken();
+      return true;
+    } catch (e) {
+      print('토큰 갱신 실패: $e');
+      return false;
+    }
+  }
+
+  // 현재 로그인한 사용자 정보 조회 (토큰 만료 시 자동 갱신)
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       final token = await _storage.read(key: 'token');
-
+      print('getCurrentUser - 저장된 토큰: ${token?.substring(0, 20)}...');
 
       if (token == null) {
+        print('getCurrentUser - 토큰이 null입니다');
         throw Exception('토큰이 없습니다.');
       }
+
       final headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       };
 
-      final response = await _dio.get(
-        '$_baseUrl/users/current-user',
-        options: Options(headers: headers),
-      );
+      print('getCurrentUser - OAuth API 호출 시작');
+      // 먼저 OAuth 컨트롤러 시도
+      try {
+        final response = await _dio.get(
+          '$_baseUrl/oauth/current-user',
+          options: Options(headers: headers),
+        );
+        print('getCurrentUser - OAuth API 성공');
+        return response.data;
+      } catch (e) {
+        print('getCurrentUser - OAuth API 실패: $e');
 
-      return response.data;
+        // 백엔드 문제 우회: 토큰 갱신을 시도하지 않고 바로 User API로 fallback
+        print('getCurrentUser - 백엔드 문제 우회: User API로 바로 fallback');
+        try {
+          final response = await _dio.get(
+            '$_baseUrl/users/current-user',
+            options: Options(headers: headers),
+          );
+          print('getCurrentUser - User API 성공');
+          return response.data;
+        } catch (e2) {
+          print('getCurrentUser - User API도 실패: $e2');
+          throw Exception('사용자 정보를 불러오는 데 실패했습니다: $e2');
+        }
+      }
     } catch (e) {
-      print(e);
-      throw Exception('2용자 정보를 불러오는 데 실패했습니다: $e');
+      print('getCurrentUser - 최종 오류: $e');
+      throw Exception('사용자 정보를 불러오는 데 실패했습니다: $e');
     }
   }
 
@@ -105,7 +163,107 @@ class AuthService {
     await _storage.delete(key: 'token');
     await _storage.delete(key: 'refreshToken');
   }
+
+  // 토큰 유효성 검사 (토큰 만료 시 자동 갱신)
+  Future<bool> isTokenValid() async {
+    try {
+      final token = await _storage.read(key: 'token');
+      if (token == null) return false;
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      try {
+        await _dio.get(
+          '$_baseUrl/oauth/current-user',
+          options: Options(headers: headers),
+        );
+        return true;
+      } catch (e) {
+        if (e is DioException && _isTokenExpired(e)) {
+          // 토큰 만료 시 갱신 시도
+          return await _handleTokenExpiration();
+        }
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 저장된 토큰 가져오기
+  Future<String?> getStoredToken() async {
+    return await _storage.read(key: 'token');
+  }
+
+  // 저장된 리프레시 토큰 가져오기
+  Future<String?> getStoredRefreshToken() async {
+    return await _storage.read(key: 'refreshToken');
+  }
+
+  // 로그인 상태 확인
+  Future<bool> isLoggedIn() async {
+    try {
+      final token = await _storage.read(key: 'token');
+      final refreshToken = await _storage.read(key: 'refreshToken');
+
+      print('isLoggedIn - 토큰: ${token?.substring(0, 20)}...');
+      print('isLoggedIn - refreshToken: ${refreshToken?.substring(0, 20)}...');
+
+      return token != null && refreshToken != null;
+    } catch (e) {
+      print('isLoggedIn - 오류: $e');
+      return false;
+    }
+  }
+
+  // 저장된 모든 토큰 정보 출력 (디버깅용)
+  Future<void> printStoredTokens() async {
+    try {
+      final token = await _storage.read(key: 'token');
+      final refreshToken = await _storage.read(key: 'refreshToken');
+
+      print('=== 저장된 토큰 정보 ===');
+      print('토큰: ${token ?? 'null'}');
+      print('refreshToken: ${refreshToken ?? 'null'}');
+      print('=======================');
+    } catch (e) {
+      print('토큰 정보 출력 오류: $e');
+    }
+  }
+
+  // 토큰 만료 시 로그인 필요 여부 확인
+  Future<bool> needsReLogin() async {
+    try {
+      await printStoredTokens(); // 디버깅용
+
+      final token = await _storage.read(key: 'token');
+      final storedRefreshToken = await _storage.read(key: 'refreshToken');
+
+      if (token == null || storedRefreshToken == null) {
+        print('needsReLogin - 토큰이 없어서 재로그인 필요');
+        return true;
+      }
+
+      // 토큰 유효성 검사 시도
+      final isValid = await isTokenValid();
+      if (!isValid) {
+        // 토큰 갱신 시도
+        try {
+          await refreshToken();
+          return false;
+        } catch (e) {
+          print('needsReLogin - 토큰 갱신 실패: $e');
+          return true; // 갱신 실패 시 재로그인 필요
+        }
+      }
+
+      return false;
+    } catch (e) {
+      print('needsReLogin - 오류: $e');
+      return true;
+    }
+  }
 }
-
-
-

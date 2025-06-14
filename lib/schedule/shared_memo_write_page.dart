@@ -4,16 +4,16 @@ import 'package:mapmoa/widgets/custom_top_nav_bar.dart';
 import 'package:mapmoa/api/schedule_service.dart';
 import 'package:mapmoa/api/auth_service.dart';
 
-class MemoWritePage extends StatefulWidget {
+class SharedMemoWritePage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const MemoWritePage({super.key, this.initialData});
+  const SharedMemoWritePage({super.key, this.initialData});
 
   @override
-  State<MemoWritePage> createState() => _MemoWritePageState();
+  State<SharedMemoWritePage> createState() => _SharedMemoWritePageState();
 }
 
-class _MemoWritePageState extends State<MemoWritePage> {
+class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
   final ScheduleService _scheduleService = ScheduleService();
   final AuthService _authService = AuthService();
 
@@ -123,7 +123,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
   Future<void> _submitMemo() async {
     if (_locationController.text.trim().isEmpty ||
         _memoController.text.trim().isEmpty) {
-      _showErrorSnackBar('일정 작성을 완료해주세요.');
+      _showErrorSnackBar('공유 일정 작성을 완료해주세요.');
       return;
     }
 
@@ -148,9 +148,9 @@ class _MemoWritePageState extends State<MemoWritePage> {
       }
 
       // 현재 사용자 정보 가져오기
-      print('사용자 정보 조회 시작');
+      print('공유 일정 - 사용자 정보 조회 시작');
       final userData = await _authService.getCurrentUser();
-      print('사용자 정보 조회 성공: ${userData['id']}');
+      print('공유 일정 - 사용자 정보 조회 성공: ${userData['id']}');
       final userId = userData['id'] as int;
 
       final scheduleData = {
@@ -160,22 +160,22 @@ class _MemoWritePageState extends State<MemoWritePage> {
         'color': colorToString(_selectedColor),
         'latitude': latitude,
         'longitude': longitude,
-        'isShared': false, // 기본적으로 개인 일정
+        'isShared': true, // 공유 일정으로 설정
       };
 
       if (isEditMode) {
         // 일정 수정
         final scheduleId = widget.initialData!['id'] as int;
-        print('일정 수정 시작: $scheduleId');
+        print('공유 일정 수정 시작: $scheduleId');
         await _scheduleService.updateSchedule(scheduleId, userId, scheduleData);
-        print('일정 수정 완료');
-        _showSuccessSnackBar('일정이 수정되었습니다.');
+        print('공유 일정 수정 완료');
+        _showSuccessSnackBar('공유 일정이 수정되었습니다.');
       } else {
-        // 새 일정 생성
-        print('일정 생성 시작');
+        // 새 공유 일정 생성
+        print('공유 일정 생성 시작');
         await _scheduleService.createSchedule(userId, scheduleData);
-        print('일정 생성 완료');
-        _showSuccessSnackBar('일정이 생성되었습니다.');
+        print('공유 일정 생성 완료');
+        _showSuccessSnackBar('공유 일정이 생성되었습니다.');
       }
 
       Navigator.pop(context, true); // 성공 시 true 반환
@@ -189,8 +189,8 @@ class _MemoWritePageState extends State<MemoWritePage> {
         return;
       }
 
-      print("$e");
-      _showErrorSnackBar('일정 ${isEditMode ? '수정' : '생성'}에 실패했습니다: $e');
+      print("공유 일정 오류: $e");
+      _showErrorSnackBar('공유 일정 ${isEditMode ? '수정' : '생성'}에 실패했습니다: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -201,7 +201,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
   Future<void> _checkLoginStatus() async {
     try {
       final isLoggedIn = await _authService.isLoggedIn();
-      print('메모 작성 페이지 - 로그인 상태: $isLoggedIn');
+      print('공유 메모 작성 페이지 - 로그인 상태: $isLoggedIn');
 
       if (!isLoggedIn) {
         print('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
@@ -271,7 +271,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
           Column(
             children: [
               CustomTopBar(
-                title: isEditMode ? '일정 수정' : '일정 작성',
+                title: isEditMode ? '공유 일정 수정' : '공유 일정 작성',
                 onBack: () => Navigator.pop(context),
                 rightText: isEditMode ? '수정 완료' : '완료',
                 onRightPressed: _isLoading ? null : _submitMemo,
@@ -282,6 +282,36 @@ class _MemoWritePageState extends State<MemoWritePage> {
                   child: Column(
                     children: [
                       const SizedBox(height: 30),
+                      // 공유 일정 안내 메시지
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA724).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFFFA724).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: const Color(0xFFFFA724),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '공유 일정은 다른 사용자와 함께 볼 수 있습니다.',
+                                style: TextStyle(
+                                  color: const Color(0xFFFFA724),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       Container(
                         height: 60,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -409,7 +439,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
                                 enabled: !_isLoading,
                                 decoration: const InputDecoration(
                                   border: InputBorder.none,
-                                  hintText: '메모를 입력하세요.',
+                                  hintText: '공유할 메모를 입력하세요.',
                                 ),
                               ),
                             ),

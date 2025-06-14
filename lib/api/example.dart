@@ -4,8 +4,10 @@ import 'user_service.dart';
 import 'schedule_service.dart';
 import 'shared_schedule_service.dart';
 import 'article_service.dart';
-import 'api/comment_service.dart';
+import 'comment_service.dart';
 import 'brand_service.dart';
+import 'notification_service.dart';
+import 'dio_interceptor.dart';
 
 class ApiExample extends StatelessWidget {
   // 서비스 인스턴스 생성
@@ -16,9 +18,20 @@ class ApiExample extends StatelessWidget {
   final _articleService = ArticleService();
   final _commentService = CommentService();
   final _brandService = BrandService();
+  final _notificationService = NotificationService();
 
   // 1. 인증 관련 API 호출 예시
   Future<void> _authExample() async {
+    // Dio 인터셉터를 사용하면 토큰 만료 시 자동으로 갱신됩니다
+    // createDioWithInterceptor() 함수로 Dio 인스턴스를 생성하여 사용
+
+    // 로그인 상태 확인
+    final isLoggedIn = await _authService.isLoggedIn();
+    print('현재 로그인 상태: $isLoggedIn');
+
+    // 저장된 토큰 정보 출력 (디버깅용)
+    await _authService.printStoredTokens();
+
     // 로그인
     final loginResult = await _authService.login(
       'email@example.com',
@@ -32,8 +45,20 @@ class ApiExample extends StatelessWidget {
       'name': '홍길동',
     });
 
-    // 현재 사용자 정보 조회
+    // 현재 사용자 정보 조회 (토큰 만료 시 자동 갱신)
     final currentUser = await _authService.getCurrentUser();
+
+    // 토큰 유효성 검사 (토큰 만료 시 자동 갱신)
+    final isValid = await _authService.isTokenValid();
+
+    // 토큰 갱신
+    final refreshResult = await _authService.refreshToken();
+
+    // 재로그인 필요 여부 확인
+    final needsReLogin = await _authService.needsReLogin();
+
+    // 로그아웃
+    await _authService.logout();
   }
 
   // 2. 사용자 관련 API 호출 예시
@@ -53,27 +78,61 @@ class ApiExample extends StatelessWidget {
 
   // 3. 일정 관련 API 호출 예시
   Future<void> _scheduleExample() async {
-    // 일정 생성
+    // 개인 일정 생성
     final newSchedule = await _scheduleService.createSchedule(1, {
       'title': '미팅',
-      'description': '팀 미팅',
-      'startTime': '2024-03-20T14:00:00',
-      'endTime': '2024-03-20T15:00:00',
-      'location': {
-        'latitude': 37.5665,
-        'longitude': 126.9780,
-        'address': '서울시 강남구',
-      },
+      'memo': '팀 미팅',
+      'location': '서울시 강남구',
+      'color': 'blue',
+      'latitude': 37.5665,
+      'longitude': 126.9780,
+      'isShared': false,
+    });
+
+    // 공유 일정 생성
+    final sharedSchedule = await _scheduleService.createSchedule(1, {
+      'title': '팀 회의',
+      'memo': '프로젝트 회의',
+      'location': '서울시 강남구',
+      'color': 'green',
+      'latitude': 37.5665,
+      'longitude': 126.9780,
+      'isShared': true,
     });
 
     // 일정 목록 조회
     final schedules = await _scheduleService.getAllSchedulesByUser(1);
+
+    // 일정 수정
+    final updatedSchedule = await _scheduleService.updateSchedule(1, 1, {
+      'title': '수정된 미팅',
+      'memo': '수정된 팀 미팅',
+      'location': '서울시 강남구',
+      'color': 'red',
+      'latitude': 37.5665,
+      'longitude': 126.9780,
+      'isShared': false,
+    });
+
+    // 일정 삭제
+    await _scheduleService.deleteSchedule(1, 1);
 
     // 주변 일정 검색
     final nearbySchedules = await _scheduleService.findSchedulesNearby(
       37.5665, // 위도
       126.9780, // 경도
       1.0, // 반경 (km)
+    );
+
+    // 일정 공유 상태 변경
+    await _scheduleService.updateScheduleShareStatus(1, true, 1);
+
+    // 일정 알림 설정
+    await _scheduleService.updateScheduleReminder(
+      1,
+      true,
+      '2024-03-20T13:30:00',
+      1,
     );
   }
 
@@ -157,6 +216,28 @@ class ApiExample extends StatelessWidget {
 
     // 브랜드의 이벤트 목록 조회
     final events = await _brandService.getEventsByBrandId(1);
+  }
+
+  // 8. 알림 관련 API 호출 예시
+  Future<void> _notificationExample() async {
+    // 모든 알림 조회
+    final notifications = await _notificationService.getUserNotifications();
+
+    // 읽지 않은 알림 조회
+    final unreadNotifications =
+        await _notificationService.getUnreadNotifications();
+
+    // 읽지 않은 알림 수 조회
+    final unreadCount = await _notificationService.getUnreadCount();
+
+    // 특정 알림 읽음 처리
+    await _notificationService.markAsRead(1);
+
+    // 모든 알림 읽음 처리
+    await _notificationService.markAllAsRead();
+
+    // FCM 토큰 업데이트
+    await _notificationService.updateFcmToken('fcm_token_here');
   }
 
   @override

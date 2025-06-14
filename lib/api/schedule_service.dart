@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'auth_service.dart';
 
 class ScheduleService {
   final Dio _dio = Dio();
   final String _baseUrl = 'http://127.0.0.1:8080/api/schedules';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.read(key: 'token');
@@ -14,35 +16,55 @@ class ScheduleService {
     };
   }
 
+  // 토큰 만료 여부 확인
+  bool _isTokenExpired(DioException e) {
+    return e.response?.statusCode == 401 ||
+        e.response?.statusCode == 403 ||
+        e.message?.contains('만료된 JWT 토큰') == true ||
+        e.message?.contains('유효한 JWT 토큰이 없습니다') == true;
+  }
+
+  // API 호출 시 토큰 만료 처리
+  Future<T> _handleApiCall<T>(Future<T> Function() apiCall) async {
+    try {
+      return await apiCall();
+    } catch (e) {
+      if (e is DioException && _isTokenExpired(e)) {
+        // 토큰 갱신 시도
+        try {
+          await _authService.refreshToken();
+          // 갱신 성공 시 새로운 토큰으로 다시 시도
+          return await apiCall();
+        } catch (refreshError) {
+          throw Exception('토큰이 만료되었습니다. 다시 로그인해주세요.');
+        }
+      }
+      rethrow;
+    }
+  }
+
   // 사용자의 모든 일정 조회
   Future<List<dynamic>> getAllSchedulesByUser(int userId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '$_baseUrl/user/$userId',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
-    } catch (e) {
-      throw Exception('일정 목록을 불러오는데 실패했습니다: $e');
-    }
+    });
   }
 
   // 일정 상세 조회
   Future<dynamic> getScheduleById(int scheduleId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '$_baseUrl/$scheduleId',
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e.toString().contains('404')) {
-        throw Exception('일정을 찾을 수 없습니다.');
-      }
-      throw Exception('일정을 불러오는데 실패했습니다: $e');
-    }
+    });
   }
 
   // 일정 생성
@@ -50,7 +72,7 @@ class ScheduleService {
     int userId,
     Map<String, dynamic> scheduleData,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.post(
         '$_baseUrl?userId=$userId',
@@ -58,9 +80,7 @@ class ScheduleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      throw Exception('일정 생성에 실패했습니다: $e');
-    }
+    });
   }
 
   // 일정 수정
@@ -69,7 +89,7 @@ class ScheduleService {
     int userId,
     Map<String, dynamic> scheduleData,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.put(
         '$_baseUrl/$scheduleId?userId=$userId',
@@ -77,32 +97,18 @@ class ScheduleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e.toString().contains('403')) {
-        throw Exception('일정을 수정할 권한이 없습니다.');
-      } else if (e.toString().contains('404')) {
-        throw Exception('일정을 찾을 수 없습니다.');
-      }
-      throw Exception('일정 수정에 실패했습니다: $e');
-    }
+    });
   }
 
   // 일정 삭제
   Future<void> deleteSchedule(int scheduleId, int userId) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       await _dio.delete(
         '$_baseUrl/$scheduleId?userId=$userId',
         options: Options(headers: headers),
       );
-    } catch (e) {
-      if (e.toString().contains('403')) {
-        throw Exception('일정을 삭제할 권한이 없습니다.');
-      } else if (e.toString().contains('404')) {
-        throw Exception('일정을 찾을 수 없습니다.');
-      }
-      throw Exception('일정 삭제에 실패했습니다: $e');
-    }
+    });
   }
 
   // 일정 공유 상태 변경
@@ -111,7 +117,7 @@ class ScheduleService {
     bool isShared,
     int userId,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.patch(
         '$_baseUrl/$scheduleId/share?userId=$userId',
@@ -119,14 +125,7 @@ class ScheduleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e.toString().contains('403')) {
-        throw Exception('공유 상태를 변경할 권한이 없습니다.');
-      } else if (e.toString().contains('404')) {
-        throw Exception('일정을 찾을 수 없습니다.');
-      }
-      throw Exception('공유 상태 변경에 실패했습니다: $e');
-    }
+    });
   }
 
   // 일정 알림 설정
@@ -136,7 +135,7 @@ class ScheduleService {
     String? reminderTime,
     int userId,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.patch(
         '$_baseUrl/$scheduleId/reminder?userId=$userId',
@@ -147,14 +146,7 @@ class ScheduleService {
         options: Options(headers: headers),
       );
       return response.data;
-    } catch (e) {
-      if (e.toString().contains('403')) {
-        throw Exception('알림 설정을 변경할 권한이 없습니다.');
-      } else if (e.toString().contains('404')) {
-        throw Exception('일정을 찾을 수 없습니다.');
-      }
-      throw Exception('알림 설정 변경에 실패했습니다: $e');
-    }
+    });
   }
 
   // 특정 위치 주변의 일정 검색
@@ -163,7 +155,7 @@ class ScheduleService {
     double longitude,
     double radius,
   ) async {
-    try {
+    return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
         '$_baseUrl/nearby',
@@ -175,8 +167,6 @@ class ScheduleService {
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
-    } catch (e) {
-      throw Exception('주변 일정을 불러오는데 실패했습니다: $e');
-    }
+    });
   }
 }

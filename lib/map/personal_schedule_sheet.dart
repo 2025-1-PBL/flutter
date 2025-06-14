@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mapmoa/schedule/solo_write.dart';
-import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:mapmoa/api/schedule_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart'; // NLatLng 타입 사용 위해 import
 
-class PersonalScheduleSheet extends StatelessWidget {
+class PersonalScheduleSheet extends StatefulWidget {
   final bool showMarkers;
   final Function(bool) onToggleMarkers;
   final Function(NLatLng) onMemoTap;
@@ -16,9 +17,72 @@ class PersonalScheduleSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final personalMemos = getPersonalMemos();
+  State<PersonalScheduleSheet> createState() => _PersonalScheduleSheetState();
+}
 
+class _PersonalScheduleSheetState extends State<PersonalScheduleSheet> {
+  final ScheduleService _scheduleService = ScheduleService();
+  final AuthService _authService = AuthService();
+
+  List<Map<String, dynamic>> _personalSchedules = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPersonalSchedules();
+  }
+
+  Future<void> _loadPersonalSchedules() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = '';
+      });
+
+      // 현재 사용자 정보 가져오기
+      final userData = await _authService.getCurrentUser();
+      final userId = userData['id'] as int;
+
+      // 사용자의 모든 일정 가져오기
+      final allSchedules = await _scheduleService.getAllSchedulesByUser(userId);
+
+      // 개인 일정만 필터링
+      final personalSchedules =
+          allSchedules
+              .where((schedule) {
+                return (schedule['isShared'] ?? false) == false;
+              })
+              .map((schedule) {
+                return {
+                  'id': schedule['id'],
+                  'memo': schedule['memo'] ?? schedule['title'] ?? '',
+                  'location': schedule['location'] ?? '',
+                  'color': schedule['color'] ?? 'blue',
+                  'latitude': schedule['latitude'],
+                  'longitude': schedule['longitude'],
+                  'isShared': schedule['isShared'] ?? false,
+                  'createdAt': schedule['createdAt'],
+                };
+              })
+              .toList();
+
+      setState(() {
+        _personalSchedules = personalSchedules;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+      print('개인 일정 로딩 실패: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.3,
@@ -40,22 +104,21 @@ class PersonalScheduleSheet extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/location.png',
-                      width: 24,
-                      height: 24,
-                    ),
+                    Image.asset('assets/location.png', width: 24, height: 24),
                     const SizedBox(width: 8),
                     const Text(
                       '개인 일정',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Transform.scale(
                       scale: 0.9,
                       child: Switch(
-                        value: showMarkers,
-                        onChanged: onToggleMarkers,
+                        value: widget.showMarkers,
+                        onChanged: widget.onToggleMarkers,
                         activeColor: Color(0xFFFFA724),
                       ),
                     ),
@@ -63,18 +126,63 @@ class PersonalScheduleSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: SoloWritePage(
-                    memos: personalMemos,
-                    onMemoTap: (index) {
-                      final memo = personalMemos[index];
-                      debugPrint('Tapped memo: lat=${memo['latitude']}, lng=${memo['longitude']}, color=${memo['color']}');
-                      if (memo['latitude'] is double && memo['longitude'] is double) {
-                        onMemoTap(NLatLng(memo['latitude'], memo['longitude']));
-                      }
-                    },
-                    isSelecting: false,
-                    selectedIndexes: {},
-                  ),
+                  child:
+                      _isLoading
+                          ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFFA724),
+                            ),
+                          )
+                          : _errorMessage.isNotEmpty
+                          ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '데이터를 불러오는데 실패했습니다',
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: _loadPersonalSchedules,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFFA724),
+                                  ),
+                                  child: const Text('다시 시도'),
+                                ),
+                              ],
+                            ),
+                          )
+                          : _personalSchedules.isEmpty
+                          ? const Center(
+                            child: Text(
+                              '등록된 개인 일정이 없습니다.',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                          : SoloWritePage(
+                            memos: _personalSchedules,
+                            onMemoTap: (index) {
+                              final memo = _personalSchedules[index];
+                              debugPrint(
+                                'Tapped memo: lat=${memo['latitude']}, lng=${memo['longitude']}, color=${memo['color']}',
+                              );
+                              if (memo['latitude'] is double &&
+                                  memo['longitude'] is double) {
+                                widget.onMemoTap(
+                                  NLatLng(memo['latitude'], memo['longitude']),
+                                );
+                              }
+                            },
+                            isSelecting: false,
+                            selectedIndexes: {},
+                          ),
                 ),
               ],
             ),

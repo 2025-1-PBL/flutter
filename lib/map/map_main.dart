@@ -6,7 +6,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mapmoa/map/personal_schedule_sheet.dart';
 import 'package:mapmoa/map/shared_schedule_sheet.dart';
-import 'package:mapmoa/schedule/memo_data.dart';
+import 'package:mapmoa/api/schedule_service.dart';
+import 'package:mapmoa/api/auth_service.dart';
 import 'package:mapmoa/event/event_list_sheet.dart';
 import 'package:mapmoa/event/event_data.dart';
 
@@ -18,6 +19,9 @@ class MapMainPage extends StatefulWidget {
 }
 
 class _MapMainPageState extends State<MapMainPage> {
+  final ScheduleService _scheduleService = ScheduleService();
+  final AuthService _authService = AuthService();
+
   bool _isInitialized = false;
   bool _isMenuOpen = false;
   bool _showPersonalMarkers = false;
@@ -31,12 +35,66 @@ class _MapMainPageState extends State<MapMainPage> {
   NOverlayImage? _locationIcon;
   NOverlayImage? _eventIcon;
 
+  List<Map<String, dynamic>> _personalSchedules = [];
+  List<Map<String, dynamic>> _sharedSchedules = [];
+  bool _isLoadingSchedules = false;
+
   @override
   void initState() {
     super.initState();
     _initializeNaverMap();
     _loadAllMarkerIcons();
     _checkPermissionAndGetLocation();
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    try {
+      setState(() {
+        _isLoadingSchedules = true;
+      });
+
+      // 현재 사용자 정보 가져오기
+      final userData = await _authService.getCurrentUser();
+      final userId = userData['id'] as int;
+
+      // 사용자의 모든 일정 가져오기
+      final allSchedules = await _scheduleService.getAllSchedulesByUser(userId);
+
+      // 개인 일정과 공유 일정 분리
+      final personalSchedules = <Map<String, dynamic>>[];
+      final sharedSchedules = <Map<String, dynamic>>[];
+
+      for (final schedule in allSchedules) {
+        final scheduleMap = {
+          'id': schedule['id'],
+          'memo': schedule['memo'] ?? schedule['title'] ?? '',
+          'location': schedule['location'] ?? '',
+          'color': schedule['color'] ?? 'blue',
+          'latitude': schedule['latitude'],
+          'longitude': schedule['longitude'],
+          'isShared': schedule['isShared'] ?? false,
+          'createdAt': schedule['createdAt'],
+        };
+
+        if (scheduleMap['isShared'] == true) {
+          sharedSchedules.add(scheduleMap);
+        } else {
+          personalSchedules.add(scheduleMap);
+        }
+      }
+
+      setState(() {
+        _personalSchedules = personalSchedules;
+        _sharedSchedules = sharedSchedules;
+        _isLoadingSchedules = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingSchedules = false;
+      });
+      print('일정 로딩 실패: $e');
+    }
   }
 
   Future<void> _initializeNaverMap() async {
@@ -79,7 +137,9 @@ class _MapMainPageState extends State<MapMainPage> {
       if (!status.isGranted) return;
     }
 
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
     setState(() {
       _currentLocation = NLatLng(position.latitude, position.longitude);
     });
@@ -132,7 +192,7 @@ class _MapMainPageState extends State<MapMainPage> {
     }
 
     if (_showPersonalMarkers) {
-      for (final memo in globalPersonalMemos) {
+      for (final memo in _personalSchedules) {
         final lat = memo['latitude'];
         final lng = memo['longitude'];
         final colorRaw = memo['color'];
@@ -145,7 +205,8 @@ class _MapMainPageState extends State<MapMainPage> {
             icon: icon,
           );
           marker.setOnTapListener((_) {
-            final message = '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
+            final message =
+                '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
             _showSnackBar(message);
           });
           await _mapController?.addOverlay(marker);
@@ -154,7 +215,7 @@ class _MapMainPageState extends State<MapMainPage> {
     }
 
     if (_showSharedMarkers) {
-      for (final memo in globalSharedMemos) {
+      for (final memo in _sharedSchedules) {
         final lat = memo['latitude'];
         final lng = memo['longitude'];
         final colorRaw = memo['color'];
@@ -167,7 +228,8 @@ class _MapMainPageState extends State<MapMainPage> {
             icon: icon,
           );
           marker.setOnTapListener((_) {
-            final message = '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
+            final message =
+                '${memo['location'] ?? ''}\n\'${memo['memo'] ?? ''}\'';
             _showSnackBar(message);
           });
           await _mapController?.addOverlay(marker);
@@ -310,17 +372,17 @@ class _MapMainPageState extends State<MapMainPage> {
       }
     }
 
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
     final latLng = NLatLng(position.latitude, position.longitude);
 
     setState(() {
       _currentLocation = latLng;
     });
 
-    final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
-      target: latLng,
-      zoom: 15,
-    )..setAnimation();
+    final cameraUpdate = NCameraUpdate.scrollAndZoomTo(target: latLng, zoom: 15)
+      ..setAnimation();
 
     await _mapController?.updateCamera(cameraUpdate);
     await _refreshAllMarkers();
@@ -343,9 +405,7 @@ class _MapMainPageState extends State<MapMainPage> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
