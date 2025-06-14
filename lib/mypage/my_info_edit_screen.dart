@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
 import 'edit_nickname_screen.dart';
 import 'email_edit_screen.dart';
 import 'withdraw_screen.dart';
@@ -10,7 +8,7 @@ import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_pop_up.dart';
 import '../widgets/custom_schedule_button.dart';
 import '../api/auth_service.dart';
-import '../api/config.dart';
+import '../api/user_service.dart';
 import 'password_edit_screen.dart';
 
 class MyInfoEditScreen extends StatefulWidget {
@@ -23,6 +21,7 @@ class MyInfoEditScreen extends StatefulWidget {
 class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
   final ImagePicker _picker = ImagePicker();
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
   XFile? _image;
   bool _isSaving = false;
   Map<String, dynamic>? _currentUser;
@@ -66,27 +65,36 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
         throw Exception('토큰이 없습니다.');
       }
 
-      final dio = Dio();
-      final formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(
-          imagePath,
-          contentType: MediaType('image', 'png'),
-        ),
+      final response = await _userService.uploadProfileImage(imagePath);
+
+      // 성공적으로 업로드된 경우
+      setState(() {
+        _image = XFile(imagePath);
       });
-
-      final response = await dio.post(
-        '${ApiConfig.baseUrl}/upload/profile',
-        data: formData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-
-      print('프로필 이미지 업로드 성공: ${response.data}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('프로필 이미지가 업로드되었습니다.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
 
       // 사용자 정보 새로고침
       await _loadUserInfo();
     } catch (e) {
-      print('프로필 이미지 업로드 실패: $e');
-      throw Exception('프로필 이미지 업로드에 실패했습니다: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 이미지 업로드에 실패했습니다: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 

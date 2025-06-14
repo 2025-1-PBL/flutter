@@ -66,21 +66,27 @@ class _MapMainPageState extends State<MapMainPage> {
       final sharedSchedules = <Map<String, dynamic>>[];
 
       for (final schedule in allSchedules) {
-        final scheduleMap = {
-          'id': schedule['id'],
-          'memo': schedule['memo'] ?? schedule['title'] ?? '',
-          'location': schedule['location'] ?? '',
-          'color': schedule['color'] ?? 'blue',
-          'latitude': schedule['latitude'],
-          'longitude': schedule['longitude'],
-          'isShared': schedule['isShared'] ?? false,
-          'createdAt': schedule['createdAt'],
-        };
+        // 위치 정보가 있는 일정만 마커로 표시
+        final latitude = schedule['latitude'];
+        final longitude = schedule['longitude'];
 
-        if (scheduleMap['isShared'] == true) {
-          sharedSchedules.add(scheduleMap);
-        } else {
-          personalSchedules.add(scheduleMap);
+        if (latitude != null && longitude != null) {
+          final scheduleMap = {
+            'id': schedule['id'],
+            'memo': schedule['memo'] ?? schedule['title'] ?? '',
+            'location': schedule['location'] ?? '',
+            'color': schedule['color'] ?? 'blue',
+            'latitude': latitude is int ? latitude.toDouble() : latitude,
+            'longitude': longitude is int ? longitude.toDouble() : longitude,
+            'isShared': schedule['isShared'] ?? false,
+            'createdAt': schedule['createdAt'],
+          };
+
+          if (scheduleMap['isShared'] == true) {
+            sharedSchedules.add(scheduleMap);
+          } else {
+            personalSchedules.add(scheduleMap);
+          }
         }
       }
 
@@ -89,11 +95,26 @@ class _MapMainPageState extends State<MapMainPage> {
         _sharedSchedules = sharedSchedules;
         _isLoadingSchedules = false;
       });
+
+      // 마커 새로고침
+      await _refreshAllMarkers();
     } catch (e) {
       setState(() {
         _isLoadingSchedules = false;
       });
       print('일정 로딩 실패: $e');
+
+      // 에러 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('일정을 불러오는데 실패했습니다: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -453,6 +474,8 @@ class _MapMainPageState extends State<MapMainPage> {
                   _buildMenuButton(Icons.groups, '공유 일정'),
                   const SizedBox(height: 8),
                   _buildMenuButton(Icons.event, '이벤트 목록'),
+                  const SizedBox(height: 8),
+                  _buildMenuButton(Icons.refresh, '새로고침'),
                 ],
               ],
             ),
@@ -499,6 +522,8 @@ class _MapMainPageState extends State<MapMainPage> {
             _showSharedScheduleSheet();
           } else if (label == '이벤트 목록') {
             _showEventListSheet();
+          } else if (label == '새로고침') {
+            _refreshData();
           }
         },
         style: ElevatedButton.styleFrom(
@@ -527,5 +552,20 @@ class _MapMainPageState extends State<MapMainPage> {
         ),
       ),
     );
+  }
+
+  // 새로고침 기능 추가
+  Future<void> _refreshData() async {
+    await _loadSchedules();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('데이터가 새로고침되었습니다.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF4CAF50),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }

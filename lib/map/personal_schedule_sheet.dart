@@ -48,20 +48,28 @@ class _PersonalScheduleSheetState extends State<PersonalScheduleSheet> {
       // 사용자의 모든 일정 가져오기
       final allSchedules = await _scheduleService.getAllSchedulesByUser(userId);
 
-      // 개인 일정만 필터링
+      // 개인 일정만 필터링 (위치 정보가 있는 것만)
       final personalSchedules =
           allSchedules
               .where((schedule) {
-                return (schedule['isShared'] ?? false) == false;
+                final isPersonal = (schedule['isShared'] ?? false) == false;
+                final hasLocation =
+                    schedule['latitude'] != null &&
+                    schedule['longitude'] != null;
+                return isPersonal && hasLocation;
               })
               .map((schedule) {
+                final latitude = schedule['latitude'];
+                final longitude = schedule['longitude'];
+
                 return {
                   'id': schedule['id'],
                   'memo': schedule['memo'] ?? schedule['title'] ?? '',
                   'location': schedule['location'] ?? '',
                   'color': schedule['color'] ?? 'blue',
-                  'latitude': schedule['latitude'],
-                  'longitude': schedule['longitude'],
+                  'latitude': latitude is int ? latitude.toDouble() : latitude,
+                  'longitude':
+                      longitude is int ? longitude.toDouble() : longitude,
                   'isShared': schedule['isShared'] ?? false,
                   'createdAt': schedule['createdAt'],
                 };

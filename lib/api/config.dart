@@ -1,6 +1,6 @@
 class ApiConfig {
   // 서버 기본 URL
-  static const String baseUrl = 'http://ocb.iptime.org:8080/api';
+  static const String baseUrl = 'http://127.0.0.1:8080/api';
 
   // 개별 서비스별 URL (필요시 사용)
   static const String authUrl = baseUrl;
