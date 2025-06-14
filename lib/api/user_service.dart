@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
 
 class UserService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/users';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
@@ -22,7 +22,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/email/$email',
+        '${ApiConfig.userUrl}/email/$email',
         options: Options(headers: headers),
       );
       return response.data;
@@ -36,7 +36,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$userId',
+        '${ApiConfig.userUrl}/$userId',
         options: Options(headers: headers),
       );
       return response.data;
@@ -53,7 +53,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/$userId',
+        '${ApiConfig.userUrl}/$userId',
         data: userData,
         options: Options(headers: headers),
       );
@@ -68,7 +68,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/$userId',
+        '${ApiConfig.userUrl}/$userId',
         options: Options(headers: headers),
       );
     } catch (e) {
@@ -81,7 +81,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/search',
+        '${ApiConfig.userUrl}/search',
         queryParameters: {'name': name},
         options: Options(headers: headers),
       );
@@ -96,7 +96,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/$userId/make-admin',
+        '${ApiConfig.userUrl}/$userId/make-admin',
         options: Options(headers: headers),
       );
       return response.data;
@@ -110,7 +110,7 @@ class UserService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/admins',
+        '${ApiConfig.userUrl}/admins',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;

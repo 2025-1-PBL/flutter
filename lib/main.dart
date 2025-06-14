@@ -3,6 +3,7 @@ import 'package:provider/provider.dart'; // provider 패키지 필요
 import 'login/start.dart';
 import 'splash.dart';
 import 'home/home_screen.dart';
+import 'api/auth_service.dart';
 
 void main() {
   runApp(
@@ -22,12 +23,57 @@ class MapMoaApp extends StatelessWidget {
       title: 'mapmoa!',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.orange, fontFamily: 'Pretendard'),
-      home: const HomeScreen(),
+      home: const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
       },
     );
+  }
+}
+
+// 로그인 상태를 확인하는 래퍼 위젯
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final AuthService _authService = AuthService();
+  bool _isLoading = true;
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    try {
+      final isLoggedIn = await _authService.isLoggedIn();
+      setState(() {
+        _isLoggedIn = isLoggedIn;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('로그인 상태 확인 실패: $e');
+      setState(() {
+        _isLoggedIn = false;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return _isLoggedIn ? const HomeScreen() : const LoginScreen();
   }
 }
 

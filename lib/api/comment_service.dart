@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
 
 class CommentService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/comments';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 헤더 가져오기
@@ -27,7 +27,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/articles/$articleId',
+        '${ApiConfig.commentUrl}/articles/$articleId',
         queryParameters: {
           'page': page,
           'size': size,
@@ -50,7 +50,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/articles/$articleId',
+        '${ApiConfig.commentUrl}/articles/$articleId',
         data: commentData,
         queryParameters: {'userId': userId},
         options: Options(headers: headers),
@@ -70,7 +70,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/articles/$commentId',
+        '${ApiConfig.commentUrl}/articles/$commentId',
         data: commentData,
         queryParameters: {'userId': userId},
         options: Options(headers: headers),
@@ -89,7 +89,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/articles/$commentId',
+        '${ApiConfig.commentUrl}/articles/$commentId',
         queryParameters: {'userId': userId},
         options: Options(headers: headers),
       );
@@ -108,7 +108,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/schedules/$scheduleId',
+        '${ApiConfig.commentUrl}/schedules/$scheduleId',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -126,7 +126,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/schedules/$scheduleId',
+        '${ApiConfig.commentUrl}/schedules/$scheduleId',
         data: commentData,
         queryParameters: {'userId': userId},
         options: Options(headers: headers),
@@ -149,7 +149,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/schedules/$commentId',
+        '${ApiConfig.commentUrl}/schedules/$commentId',
         data: commentData,
         queryParameters: {'userId': userId},
         options: Options(headers: headers),
@@ -168,7 +168,7 @@ class CommentService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/schedules/$commentId',
+        '${ApiConfig.commentUrl}/schedules/$commentId',
         queryParameters: {'userId': userId},
         options: Options(headers: headers),
       );

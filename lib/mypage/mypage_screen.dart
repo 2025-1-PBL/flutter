@@ -6,10 +6,40 @@ import 'privacy_policy_screen.dart';
 import 'member_manage_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/custom_pop_up.dart';
-import 'package:mapmoa/global/user_profile.dart';
+import '../api/auth_service.dart';
 
-class MyPageScreen extends StatelessWidget {
+class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
+
+  @override
+  State<MyPageScreen> createState() => _MyPageScreenState();
+}
+
+class _MyPageScreenState extends State<MyPageScreen> {
+  final AuthService _authService = AuthService();
+  Map<String, dynamic>? _currentUser;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      final userData = await _authService.getCurrentUser();
+      setState(() {
+        _currentUser = userData;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('사용자 정보 로딩 실패: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Widget buildTile({
     required IconData icon,
@@ -20,13 +50,12 @@ class MyPageScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Container(
-        decoration: !isLast
-            ? const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Color(0xFFE0E0E0)),
-          ),
-        )
-            : null,
+        decoration:
+            !isLast
+                ? const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+                )
+                : null,
         child: ListTile(
           contentPadding: EdgeInsets.zero,
           leading: SizedBox(
@@ -78,41 +107,39 @@ class MyPageScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const MyInfoEditScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const MyInfoEditScreen(),
+                      ),
                     );
                   },
                   child: Row(
                     children: [
-                      ValueListenableBuilder<String?>(
-                        valueListenable: globalUserProfileImage,
-                        builder: (context, profilePath, child) {
-                          return CircleAvatar(
-                            radius: 28,
-                            backgroundColor: const Color(0xFFE0E0E0),
-                            backgroundImage: profilePath != null
-                                ? FileImage(File(profilePath))
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: const Color(0xFFE0E0E0),
+                        backgroundImage:
+                            _currentUser?['profilePic'] != null
+                                ? NetworkImage(_currentUser!['profilePic'])
                                 : null,
-                            child: profilePath == null
-                                ? const Icon(Icons.person, size: 40, color: Colors.white)
+                        child:
+                            _currentUser?['profilePic'] == null
+                                ? const Icon(
+                                  Icons.person,
+                                  size: 40,
+                                  color: Colors.white,
+                                )
                                 : null,
-                          );
-                        },
                       ),
                       const SizedBox(width: 12),
-                      ValueListenableBuilder<String>(
-                        valueListenable: globalUserName,
-                        builder: (context, name, _) {
-                          return Expanded(
-                            child: Text(
-                              '${name.isNotEmpty ? name : '사용자'} 님',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF767676),
-                              ),
-                            ),
-                          );
-                        },
+                      Expanded(
+                        child: Text(
+                          '${_currentUser?['name'] ?? '사용자'} 님',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF767676),
+                          ),
+                        ),
                       ),
                       const Icon(Icons.chevron_right, color: Colors.grey),
                     ],
@@ -141,7 +168,9 @@ class MyPageScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const MemberManageScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const MemberManageScreen(),
+                      ),
                     );
                   },
                   child: Row(
@@ -151,7 +180,10 @@ class MyPageScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           '공유 멤버 관리',
-                          style: TextStyle(fontSize: 18, color: Color(0xFF767676)),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Color(0xFF767676),
+                          ),
                         ),
                       ),
                       Icon(Icons.chevron_right, color: Colors.grey),
@@ -185,7 +217,9 @@ class MyPageScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const TermsOfServiceScreen(),
+                          ),
                         );
                       },
                     ),
@@ -195,7 +229,9 @@ class MyPageScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyScreen(),
+                          ),
                         );
                       },
                       isLast: true,

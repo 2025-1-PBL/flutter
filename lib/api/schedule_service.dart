@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'auth_service.dart';
+import 'config.dart';
 
 class ScheduleService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/schedules';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final AuthService _authService = AuthService();
 
@@ -29,17 +29,61 @@ class ScheduleService {
     try {
       return await apiCall();
     } catch (e) {
-      if (e is DioException && _isTokenExpired(e)) {
-        // 토큰 갱신 시도
-        try {
-          await _authService.refreshToken();
-          // 갱신 성공 시 새로운 토큰으로 다시 시도
-          return await apiCall();
-        } catch (refreshError) {
-          throw Exception('토큰이 만료되었습니다. 다시 로그인해주세요.');
+      if (e is DioException) {
+        final statusCode = e.response?.statusCode;
+        final responseData = e.response?.data;
+
+        print('API 호출 실패 - 상태 코드: $statusCode');
+        print('API 호출 실패 - 응답 데이터: $responseData');
+
+        // 토큰 만료 에러 처리
+        if (_isTokenExpired(e)) {
+          try {
+            await _authService.refreshToken();
+            // 갱신 성공 시 새로운 토큰으로 다시 시도
+            return await apiCall();
+          } catch (refreshError) {
+            throw Exception('토큰이 만료되었습니다. 다시 로그인해주세요.');
+          }
+        }
+
+        // 서버 에러 처리 (500, 502, 503 등)
+        if (statusCode != null && statusCode >= 500) {
+          String errorMessage = '서버 오류가 발생했습니다.';
+
+          // 백엔드에서 구체적인 에러 메시지가 있는 경우
+          if (responseData != null && responseData is Map) {
+            final message = responseData['message'] ?? responseData['error'];
+            if (message != null) {
+              errorMessage = message.toString();
+            }
+          }
+
+          // 500 에러의 경우 백엔드 문제임을 명시
+          if (statusCode == 500) {
+            errorMessage = '서버 내부 오류가 발생했습니다. 백엔드 개발팀에 문의해주세요.';
+          }
+
+          throw Exception(errorMessage);
+        }
+
+        // 기타 HTTP 에러 처리
+        if (statusCode != null) {
+          String errorMessage = '요청 처리 중 오류가 발생했습니다.';
+
+          if (responseData != null && responseData is Map) {
+            final message = responseData['message'] ?? responseData['error'];
+            if (message != null) {
+              errorMessage = message.toString();
+            }
+          }
+
+          throw Exception(errorMessage);
         }
       }
-      rethrow;
+
+      // 기타 예외 처리
+      throw Exception('일정 처리 중 오류가 발생했습니다: ${e.toString()}');
     }
   }
 
@@ -48,7 +92,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/user/$userId',
+        '${ApiConfig.scheduleUrl}/user/$userId',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -60,7 +104,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$scheduleId',
+        '${ApiConfig.scheduleUrl}/$scheduleId',
         options: Options(headers: headers),
       );
       return response.data;
@@ -75,7 +119,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl?userId=$userId',
+        '${ApiConfig.scheduleUrl}?userId=$userId',
         data: scheduleData,
         options: Options(headers: headers),
       );
@@ -92,7 +136,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/$scheduleId?userId=$userId',
+        '${ApiConfig.scheduleUrl}/$scheduleId?userId=$userId',
         data: scheduleData,
         options: Options(headers: headers),
       );
@@ -105,7 +149,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/$scheduleId?userId=$userId',
+        '${ApiConfig.scheduleUrl}/$scheduleId?userId=$userId',
         options: Options(headers: headers),
       );
     });
@@ -120,7 +164,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.patch(
-        '$_baseUrl/$scheduleId/share?userId=$userId',
+        '${ApiConfig.scheduleUrl}/$scheduleId/share?userId=$userId',
         data: {'isShared': isShared},
         options: Options(headers: headers),
       );
@@ -138,7 +182,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.patch(
-        '$_baseUrl/$scheduleId/reminder?userId=$userId',
+        '${ApiConfig.scheduleUrl}/$scheduleId/reminder?userId=$userId',
         data: {
           'enabled': enabled,
           if (reminderTime != null) 'reminderTime': reminderTime,
@@ -158,7 +202,7 @@ class ScheduleService {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/nearby',
+        '${ApiConfig.scheduleUrl}/nearby',
         queryParameters: {
           'latitude': latitude,
           'longitude': longitude,

@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
 
 class BrandService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/brands';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 헤더 가져오기
@@ -22,7 +22,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        _baseUrl,
+        ApiConfig.brandUrl,
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -32,18 +32,15 @@ class BrandService {
   }
 
   // 브랜드 페이징 조회
-  Future<Map<String, dynamic>> getBrandsByPage({
+  Future<Map<String, dynamic>> getBrandsWithPaging({
     int page = 0,
     int size = 10,
   }) async {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/page',
-        queryParameters: {
-          'page': page,
-          'size': size,
-        },
+        '${ApiConfig.brandUrl}/page',
+        queryParameters: {'page': page, 'size': size},
         options: Options(headers: headers),
       );
       return response.data;
@@ -57,7 +54,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/search',
+        '${ApiConfig.brandUrl}/search',
         queryParameters: {'name': name},
         options: Options(headers: headers),
       );
@@ -72,7 +69,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$brandId',
+        '${ApiConfig.brandUrl}/$brandId',
         options: Options(headers: headers),
       );
       return response.data;
@@ -82,11 +79,13 @@ class BrandService {
   }
 
   // 브랜드 생성
-  Future<Map<String, dynamic>> createBrand(Map<String, dynamic> brandData) async {
+  Future<Map<String, dynamic>> createBrand(
+    Map<String, dynamic> brandData,
+  ) async {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        _baseUrl,
+        ApiConfig.brandUrl,
         data: brandData,
         options: Options(headers: headers),
       );
@@ -97,11 +96,14 @@ class BrandService {
   }
 
   // 브랜드 정보 수정
-  Future<Map<String, dynamic>> updateBrand(int brandId, Map<String, dynamic> brandData) async {
+  Future<Map<String, dynamic>> updateBrand(
+    int brandId,
+    Map<String, dynamic> brandData,
+  ) async {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/$brandId',
+        '${ApiConfig.brandUrl}/$brandId',
         data: brandData,
         options: Options(headers: headers),
       );
@@ -116,7 +118,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/$brandId',
+        '${ApiConfig.brandUrl}/$brandId',
         options: Options(headers: headers),
       );
     } catch (e) {
@@ -131,7 +133,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$brandId/franchises',
+        ApiConfig.baseUrl + '/brands/$brandId/franchises',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -148,7 +150,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/$brandId/franchises',
+        ApiConfig.baseUrl + '/brands/$brandId/franchises',
         data: franchiseData,
         options: Options(headers: headers),
       );
@@ -163,7 +165,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/franchises/$franchiseId',
+        ApiConfig.baseUrl + '/franchises/$franchiseId',
         options: Options(headers: headers),
       );
       return response.data;
@@ -180,7 +182,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/franchises/$franchiseId',
+        ApiConfig.baseUrl + '/franchises/$franchiseId',
         data: franchiseData,
         options: Options(headers: headers),
       );
@@ -195,7 +197,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/franchises/$franchiseId',
+        ApiConfig.baseUrl + '/franchises/$franchiseId',
         options: Options(headers: headers),
       );
     } catch (e) {
@@ -212,7 +214,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/franchises/nearby',
+        ApiConfig.baseUrl + '/franchises/nearby',
         queryParameters: {
           'lat': latitude,
           'lng': longitude,
@@ -233,7 +235,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$brandId/events',
+        ApiConfig.baseUrl + '/brands/$brandId/events',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -250,7 +252,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/$brandId/events',
+        ApiConfig.baseUrl + '/brands/$brandId/events',
         data: eventData,
         options: Options(headers: headers),
       );
@@ -265,7 +267,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/events/$eventId',
+        ApiConfig.baseUrl + '/events/$eventId',
         options: Options(headers: headers),
       );
       return response.data;
@@ -282,7 +284,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/events/$eventId',
+        ApiConfig.baseUrl + '/events/$eventId',
         data: eventData,
         options: Options(headers: headers),
       );
@@ -297,7 +299,7 @@ class BrandService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/events/$eventId',
+        ApiConfig.baseUrl + '/events/$eventId',
         options: Options(headers: headers),
       );
     } catch (e) {

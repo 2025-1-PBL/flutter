@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
 
 class ArticleService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/articles';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
@@ -25,7 +25,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        _baseUrl,
+        ApiConfig.articleUrl,
         queryParameters: {'page': page, 'size': size},
         options: Options(headers: headers),
       );
@@ -40,7 +40,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$articleId',
+        '${ApiConfig.articleUrl}/$articleId',
         options: Options(headers: headers),
       );
       return response.data;
@@ -56,7 +56,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        _baseUrl,
+        ApiConfig.articleUrl,
         data: articleData,
         options: Options(headers: headers),
       );
@@ -74,7 +74,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.put(
-        '$_baseUrl/$articleId',
+        '${ApiConfig.articleUrl}/$articleId',
         data: articleData,
         options: Options(headers: headers),
       );
@@ -97,7 +97,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/$articleId',
+        '${ApiConfig.articleUrl}/$articleId',
         options: Options(headers: headers),
       );
     } catch (e) {
@@ -118,7 +118,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/$articleId/like',
+        '${ApiConfig.articleUrl}/$articleId/like',
         options: Options(headers: headers),
       );
       return response.data;
@@ -137,7 +137,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/$articleId/dislike',
+        '${ApiConfig.articleUrl}/$articleId/dislike',
         options: Options(headers: headers),
       );
       return response.data;
@@ -160,7 +160,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/nearby',
+        '${ApiConfig.articleUrl}/nearby',
         queryParameters: {
           'latitude': latitude,
           'longitude': longitude,
@@ -168,7 +168,7 @@ class ArticleService {
         },
         options: Options(headers: headers),
       );
-      return response.data;
+      return response.data as List<dynamic>;
     } catch (e) {
       throw Exception('주변 게시글을 불러오는데 실패했습니다: $e');
     }
@@ -183,7 +183,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/search/title',
+        '${ApiConfig.articleUrl}/search/title',
         queryParameters: {'keyword': keyword, 'page': page, 'size': size},
         options: Options(headers: headers),
       );
@@ -202,7 +202,7 @@ class ArticleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/search/content',
+        '${ApiConfig.articleUrl}/search/content',
         queryParameters: {'keyword': keyword, 'page': page, 'size': size},
         options: Options(headers: headers),
       );

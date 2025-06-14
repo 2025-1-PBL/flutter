@@ -1,16 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
 
 class AuthService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 로그인
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final response = await _dio.post(
-        '$_baseUrl/authenticate',
+        '${ApiConfig.authUrl}/authenticate',
         data: {'username': username, 'password': password},
       );
 
@@ -32,7 +32,10 @@ class AuthService {
   // 회원가입
   Future<Map<String, dynamic>> signup(Map<String, dynamic> userData) async {
     try {
-      final response = await _dio.post('$_baseUrl/signup', data: userData);
+      final response = await _dio.post(
+        '${ApiConfig.authUrl}/signup',
+        data: userData,
+      );
       return response.data;
     } catch (e) {
       throw Exception('회원가입에 실패했습니다: $e');
@@ -60,7 +63,7 @@ class AuthService {
       };
 
       final response = await _dio.post(
-        '$_baseUrl/refresh',
+        '${ApiConfig.authUrl}/refresh',
         data: {'refreshToken': storedRefreshToken},
         options: Options(headers: headers),
       );
@@ -130,7 +133,7 @@ class AuthService {
       // 먼저 OAuth 컨트롤러 시도
       try {
         final response = await _dio.get(
-          '$_baseUrl/oauth/current-user',
+          '${ApiConfig.authUrl}/oauth/current-user',
           options: Options(headers: headers),
         );
         print('getCurrentUser - OAuth API 성공');
@@ -142,7 +145,7 @@ class AuthService {
         print('getCurrentUser - 백엔드 문제 우회: User API로 바로 fallback');
         try {
           final response = await _dio.get(
-            '$_baseUrl/users/current-user',
+            '${ApiConfig.authUrl}/users/current-user',
             options: Options(headers: headers),
           );
           print('getCurrentUser - User API 성공');
@@ -177,7 +180,7 @@ class AuthService {
 
       try {
         await _dio.get(
-          '$_baseUrl/oauth/current-user',
+          '${ApiConfig.authUrl}/oauth/current-user',
           options: Options(headers: headers),
         );
         return true;
@@ -212,7 +215,17 @@ class AuthService {
       print('isLoggedIn - 토큰: ${token?.substring(0, 20)}...');
       print('isLoggedIn - refreshToken: ${refreshToken?.substring(0, 20)}...');
 
-      return token != null && refreshToken != null;
+      // 토큰이 없으면 로그인되지 않은 상태
+      if (token == null || refreshToken == null) {
+        print('isLoggedIn - 토큰이 없어서 로그인되지 않은 상태');
+        return false;
+      }
+
+      // 토큰 유효성 검사
+      final isValid = await isTokenValid();
+      print('isLoggedIn - 토큰 유효성: $isValid');
+
+      return isValid;
     } catch (e) {
       print('isLoggedIn - 오류: $e');
       return false;

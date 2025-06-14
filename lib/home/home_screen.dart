@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mapmoa/api/schedule_service.dart';
 import 'package:mapmoa/api/auth_service.dart';
-import 'package:mapmoa/global/user_profile.dart';
 import 'package:mapmoa/mypage/my_info_edit_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
@@ -78,11 +76,22 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      print('데이터 로딩 실패: $e');
+
+      // 토큰 관련 오류인지 확인
+      if (e.toString().contains('토큰이 없습니다') ||
+          e.toString().contains('사용자 정보를 불러오는 데 실패했습니다')) {
+        // 로그인 페이지로 리다이렉트
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        return;
+      }
+
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
       });
-      print('데이터 로딩 실패: $e');
     }
   }
 
@@ -181,48 +190,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   child: Column(
                     children: [
-                      ValueListenableBuilder<String?>(
-                        valueListenable: globalUserProfileImage,
-                        builder: (context, imagePath, _) {
-                          return CircleAvatar(
-                            radius: 42,
-                            backgroundColor: const Color(0xFFE0E0E0),
-                            backgroundImage:
-                                imagePath != null
-                                    ? FileImage(File(imagePath))
-                                    : null,
-                            child:
-                                imagePath == null
-                                    ? const Icon(
-                                      Icons.person,
-                                      size: 40,
-                                      color: Colors.white,
-                                    )
-                                    : null,
-                          );
-                        },
+                      CircleAvatar(
+                        radius: 42,
+                        backgroundColor: const Color(0xFFE0E0E0),
+                        child: const Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 10),
-                      ValueListenableBuilder<String>(
-                        valueListenable: globalUserName,
-                        builder: (context, name, _) {
-                          return Column(
-                            children: [
-                              Text(
-                                '$name 님',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '오늘은 ${allSchedules.length}개의 일정이 있어요!',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          );
-                        },
+                      Column(
+                        children: [
+                          Text(
+                            '${_currentUser?['name'] ?? '사용자'} 님',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '오늘은 ${allSchedules.length}개의 일정이 있어요!',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
                       ),
                     ],
                   ),

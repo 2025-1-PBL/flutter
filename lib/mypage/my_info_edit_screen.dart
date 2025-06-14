@@ -9,7 +9,8 @@ import 'withdraw_screen.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../widgets/custom_pop_up.dart';
 import '../widgets/custom_schedule_button.dart';
-import 'package:mapmoa/global/user_profile.dart';
+import '../api/auth_service.dart';
+import '../api/config.dart';
 import 'password_edit_screen.dart';
 
 class MyInfoEditScreen extends StatefulWidget {
@@ -21,8 +22,27 @@ class MyInfoEditScreen extends StatefulWidget {
 
 class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
   final ImagePicker _picker = ImagePicker();
+  final AuthService _authService = AuthService();
   XFile? _image;
   bool _isSaving = false;
+  Map<String, dynamic>? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      final userData = await _authService.getCurrentUser();
+      setState(() {
+        _currentUser = userData;
+      });
+    } catch (e) {
+      print('사용자 정보 로딩 실패: $e');
+    }
+  }
 
   Future<void> getUserProfileFromLibrary() async {
     final XFile? image = await _picker.pickImage(
@@ -40,29 +60,33 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
   }
 
   Future<void> postUserProfileToDB(String imagePath) async {
-    final header = {
-      "Content-Type": "multipart/form-data",
-    };
-
-    final formData = FormData.fromMap({
-      'type': 'image',
-      'image': await MultipartFile.fromFile(
-        imagePath,
-        contentType: MediaType('image', 'png'),
-      ),
-    });
-
-    final dio = Dio();
-
     try {
+      final token = await _authService.getStoredToken();
+      if (token == null) {
+        throw Exception('토큰이 없습니다.');
+      }
+
+      final dio = Dio();
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          imagePath,
+          contentType: MediaType('image', 'png'),
+        ),
+      });
+
       final response = await dio.post(
-        'https://yourserver.com/api/upload',
+        '${ApiConfig.baseUrl}/upload/profile',
         data: formData,
-        options: Options(headers: header),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      print('업로드 성공: ${response.data}');
+
+      print('프로필 이미지 업로드 성공: ${response.data}');
+
+      // 사용자 정보 새로고침
+      await _loadUserInfo();
     } catch (e) {
-      print('업로드 실패: $e');
+      print('프로필 이미지 업로드 실패: $e');
+      throw Exception('프로필 이미지 업로드에 실패했습니다: $e');
     }
   }
 
@@ -72,10 +96,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
-          CustomTopBar(
-            title: '내 정보 수정',
-            onBack: () => Navigator.pop(context),
-          ),
+          CustomTopBar(title: '내 정보 수정', onBack: () => Navigator.pop(context)),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -87,22 +108,26 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
-                        ValueListenableBuilder<String?>(
-                          valueListenable: globalUserProfileImage,
-                          builder: (context, profilePath, _) {
-                            return CircleAvatar(
-                              radius: 48,
-                              backgroundColor: const Color(0xFFE0E0E0),
-                              backgroundImage: _image != null
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: const Color(0xFFE0E0E0),
+                          backgroundImage:
+                              _image != null
                                   ? FileImage(File(_image!.path))
-                                  : (profilePath != null
-                                  ? FileImage(File(profilePath))
-                                  : null),
-                              child: (_image == null && profilePath == null)
-                                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                                  : (_currentUser?['profilePic'] != null
+                                      ? NetworkImage(
+                                        _currentUser!['profilePic'],
+                                      )
+                                      : null),
+                          child:
+                              (_image == null &&
+                                      _currentUser?['profilePic'] == null)
+                                  ? const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.white,
+                                  )
                                   : null,
-                            );
-                          },
                         ),
                         Positioned(
                           bottom: 0,
@@ -115,7 +140,11 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                                 color: Color(0xFFFFA724),
                               ),
                               padding: const EdgeInsets.all(4),
-                              child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                              child: const Icon(
+                                Icons.edit,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -141,11 +170,9 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                         _buildItem(
                           context,
                           '닉네임',
-                          trailingWidget: ValueListenableBuilder<String>(
-                            valueListenable: globalUserName,
-                            builder: (context, name, _) {
-                              return Text(name, style: const TextStyle(color: Colors.grey));
-                            },
+                          trailingWidget: Text(
+                            _currentUser?['name'] ?? '사용자',
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ),
                         _buildItem(context, '이메일 변경'),
@@ -161,10 +188,15 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const WithdrawScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const WithdrawScreen(),
+                            ),
                           );
                         },
-                        child: const Text('계정탈퇴', style: TextStyle(color: Colors.grey)),
+                        child: const Text(
+                          '계정탈퇴',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       const Text('|', style: TextStyle(color: Colors.grey)),
@@ -174,13 +206,17 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                           showDialog(
                             context: context,
                             barrierDismissible: false,
-                            builder: (ctx) => LogoutPopup(
-                              rootContext: context,
-                              message: '로그아웃 하시겠습니까?',
-                            ),
+                            builder:
+                                (ctx) => LogoutPopup(
+                                  rootContext: context,
+                                  message: '로그아웃 하시겠습니까?',
+                                ),
                           );
                         },
-                        child: const Text('로그아웃', style: TextStyle(color: Colors.grey)),
+                        child: const Text(
+                          '로그아웃',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
                     ],
                   ),
@@ -190,56 +226,70 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
           ),
         ],
       ),
-      floatingActionButton: (_image != null && !_isSaving)
-          ? Padding(
-        padding: const EdgeInsets.only(bottom: 24, right: 40),
-        child: Align(
-          alignment: Alignment.bottomRight,
-          child: CustomScheduleButton(
-            icon: Icons.check,
-            label: '저장',
-            enabled: true,
-            onTap: () async {
-              setState(() {
-                _isSaving = true;
-              });
+      floatingActionButton:
+          (_image != null && !_isSaving)
+              ? Padding(
+                padding: const EdgeInsets.only(bottom: 24, right: 40),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: CustomScheduleButton(
+                    icon: Icons.check,
+                    label: '저장',
+                    enabled: true,
+                    onTap: () async {
+                      setState(() {
+                        _isSaving = true;
+                      });
 
-              if (_image != null) {
-                await postUserProfileToDB(_image!.path);
-                globalUserProfileImage.value = _image!.path;
-                globalUserProfileImage.notifyListeners();
+                      try {
+                        if (_image != null) {
+                          await postUserProfileToDB(_image!.path);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('프로필 사진이 저장되었습니다.'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Color(0xFF4CAF50),
-                    duration: Duration(seconds: 2),
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('프로필 사진이 저장되었습니다.'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Color(0xFF4CAF50),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('프로필 사진 저장에 실패했습니다: $e'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            _image = null;
+                            _isSaving = false;
+                          });
+                        }
+                      }
+                    },
                   ),
-                );
-
-                await Future.delayed(const Duration(seconds: 2));
-
-                setState(() {
-                  _image = null;
-                  _isSaving = false;
-                });
-              }
-            },
-          ),
-        ),
-      )
-          : null,
+                ),
+              )
+              : null,
     );
   }
 
   Widget _buildItem(
-      BuildContext context,
-      String title, {
-        String? trailing,
-        Widget? trailingWidget,
-        bool isLast = false,
-      }) {
+    BuildContext context,
+    String title, {
+    String? trailing,
+    Widget? trailingWidget,
+    bool isLast = false,
+  }) {
     return InkWell(
       onTap: () {
         if (title == '닉네임') {
@@ -261,13 +311,12 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: !isLast
-            ? const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Color(0xFFE0E0E0)),
-          ),
-        )
-            : null,
+        decoration:
+            !isLast
+                ? const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+                )
+                : null,
         child: Row(
           children: [
             Text(title, style: const TextStyle(fontSize: 16)),

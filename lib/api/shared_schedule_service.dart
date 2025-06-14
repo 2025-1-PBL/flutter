@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
 
 class SharedScheduleService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'http://127.0.0.1:8080/api/shared-schedules';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
@@ -22,11 +22,8 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/share',
-        queryParameters: {
-          'scheduleId': scheduleId,
-          'userId': userId,
-        },
+        '${ApiConfig.sharedScheduleUrl}/share',
+        queryParameters: {'scheduleId': scheduleId, 'userId': userId},
         options: Options(headers: headers),
       );
       return response.data;
@@ -55,11 +52,8 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.post(
-        '$_baseUrl/$sharedScheduleId/members',
-        queryParameters: {
-          'memberUserId': memberUserId,
-          'masterId': masterId,
-        },
+        '${ApiConfig.sharedScheduleUrl}/$sharedScheduleId/members',
+        queryParameters: {'memberUserId': memberUserId, 'masterId': masterId},
         options: Options(headers: headers),
       );
       return response.data;
@@ -88,10 +82,8 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/$sharedScheduleId/members/$memberUserId',
-        queryParameters: {
-          'requestUserId': requestUserId,
-        },
+        '${ApiConfig.sharedScheduleUrl}/$sharedScheduleId/members/$memberUserId',
+        queryParameters: {'requestUserId': requestUserId},
         options: Options(headers: headers),
       );
     } catch (e) {
@@ -115,10 +107,8 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       await _dio.delete(
-        '$_baseUrl/$sharedScheduleId',
-        queryParameters: {
-          'userId': userId,
-        },
+        '${ApiConfig.sharedScheduleUrl}/$sharedScheduleId',
+        queryParameters: {'userId': userId},
         options: Options(headers: headers),
       );
     } catch (e) {
@@ -142,10 +132,8 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/shared-with-me',
-        queryParameters: {
-          'userId': userId,
-        },
+        '${ApiConfig.sharedScheduleUrl}/shared-with-me',
+        queryParameters: {'userId': userId},
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -164,10 +152,8 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/owned',
-        queryParameters: {
-          'userId': userId,
-        },
+        '${ApiConfig.sharedScheduleUrl}/owned',
+        queryParameters: {'userId': userId},
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
@@ -186,7 +172,7 @@ class SharedScheduleService {
     try {
       final headers = await _getHeaders();
       final response = await _dio.get(
-        '$_baseUrl/$sharedScheduleId/members',
+        '${ApiConfig.sharedScheduleUrl}/$sharedScheduleId/members',
         options: Options(headers: headers),
       );
       return response.data as List<dynamic>;
