@@ -17,14 +17,42 @@ class SocialLoginService {
 
       print('소셜 로그인 시작: $url');
 
-      if (await canLaunchUrl(Uri.parse(url))) {
-        await launchUrl(
-          Uri.parse(url),
-          mode: LaunchMode.externalApplication, // 브라우저에서 열기
-        );
-      } else {
+      final uri = Uri.parse(url);
+
+      // URL이 유효한지 확인
+      if (!uri.hasScheme || !uri.hasAuthority) {
+        throw Exception('유효하지 않은 URL입니다: $url');
+      }
+
+      // canLaunchUrl 체크를 건너뛰고 직접 실행 시도
+      bool launched = false;
+
+      // 먼저 외부 브라우저에서 실행 시도
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        print('외부 브라우저 실행 실패: $e');
+      }
+
+      // 외부 브라우저가 실패하면 인앱 브라우저로 시도
+      if (!launched) {
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+        } catch (e) {
+          print('인앱 브라우저 실행 실패: $e');
+        }
+      }
+
+      // 모든 방법이 실패하면 기본 모드로 시도
+      if (!launched) {
+        launched = await launchUrl(uri);
+      }
+
+      if (!launched) {
         throw Exception('소셜 로그인을 시작할 수 없습니다: $url');
       }
+
+      print('소셜 로그인 URL 실행 성공');
     } catch (e) {
       print('소셜 로그인 오류: $e');
       rethrow;
