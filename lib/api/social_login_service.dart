@@ -13,7 +13,25 @@ class SocialLoginService {
           Platform.isAndroid
               ? ApiConfig.socialLoginAndroidUrl
               : ApiConfig.socialLoginBaseUrl;
-      final url = '$baseUrl/oauth2/authorization/$provider';
+
+      // 각 제공자별로 적절한 엔드포인트 사용
+      String url;
+      switch (provider) {
+        case 'google':
+          // 구글의 경우 Spring Security OAuth2의 기본 엔드포인트 사용
+          url = '$baseUrl/oauth2/authorization/google';
+          break;
+        case 'kakao':
+          // 카카오는 명시적으로 설정된 redirect URI 사용
+          url = '$baseUrl/oauth2/authorization/kakao';
+          break;
+        case 'naver':
+          // 네이버도 명시적으로 설정된 redirect URI 사용
+          url = '$baseUrl/oauth2/authorization/naver';
+          break;
+        default:
+          throw Exception('지원하지 않는 소셜 로그인 제공자입니다: $provider');
+      }
 
       print('소셜 로그인 시작: $url');
 

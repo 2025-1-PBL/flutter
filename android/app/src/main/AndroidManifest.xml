@@ -41,6 +41,20 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="mapmo" android:host="oauth2" android:pathPrefix="/redirect" />
             </intent-filter>
+            
+            <!-- OAuth2 콜백 처리 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="ocb.iptime.org" android:port="8080" android:pathPrefix="/login/oauth2/code" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="ocb.iptime.org" android:port="8080" android:pathPrefix="/login/oauth2/code" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
