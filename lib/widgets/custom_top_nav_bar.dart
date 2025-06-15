@@ -16,6 +16,9 @@ class CustomTopBar extends StatelessWidget {
   final String? rightText;
   final VoidCallback? onRightPressed;
 
+  // ✅ 새로 추가된 커스텀 위젯 (예: PopupMenuButton)
+  final Widget? actionWidget;
+
   const CustomTopBar({
     super.key,
     required this.title,
@@ -29,6 +32,7 @@ class CustomTopBar extends StatelessWidget {
     this.actionIconColor,
     this.rightText,
     this.onRightPressed,
+    this.actionWidget, // ✅ 추가
   });
 
   @override
@@ -60,41 +64,42 @@ class CustomTopBar extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: rightText != null && onRightPressed != null
-                  ? TextButton(
-                onPressed: onRightPressed,
-                child: Text(
-                  rightText!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFFFFA724),
-                  ),
-                ),
-              )
-                  : actionText != null
-                  ? TextButton(
-                onPressed: onAction,
-                child: Text(
-                  actionText!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: onAction != null
-                        ? const Color(0xFFFFA724)
-                        : Colors.grey,
-                  ),
-                ),
-              )
-                  : actionIcon != null
-                  ? IconButton(
-                icon: Icon(
-                  actionIcon,
-                  color: actionIconColor ?? Colors.black,
-                ),
-                onPressed: onAction,
-              )
-                  : const SizedBox(width: 40),
+              child: actionWidget ?? // ✅ 최우선: 위젯이 있으면 그걸 사용
+                  (rightText != null && onRightPressed != null
+                      ? TextButton(
+                    onPressed: onRightPressed,
+                    child: Text(
+                      rightText!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFFA724),
+                      ),
+                    ),
+                  )
+                      : actionText != null
+                      ? TextButton(
+                    onPressed: onAction,
+                    child: Text(
+                      actionText!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: onAction != null
+                            ? const Color(0xFFFFA724)
+                            : Colors.grey,
+                      ),
+                    ),
+                  )
+                      : actionIcon != null
+                      ? IconButton(
+                    icon: Icon(
+                      actionIcon,
+                      color: actionIconColor ?? Colors.black,
+                    ),
+                    onPressed: onAction,
+                  )
+                      : const SizedBox(width: 40)),
             ),
           ],
         ),

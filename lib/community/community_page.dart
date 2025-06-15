@@ -248,40 +248,8 @@ class _CommunityPageState extends State<CommunityPage> {
             _buildTraceCard(),
             const SizedBox(height: 20),
             _buildSortButtons(),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () => setState(() => isCardView = true),
-                  child: Text(
-                    '카드 형식',
-                    style: TextStyle(
-                      color: isCardView ? const Color(0xFFFFA724) : Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const Text('|'),
-                TextButton(
-                  onPressed: () => setState(() => isCardView = false),
-                  child: Text(
-                    '카테고리 형식',
-                    style: TextStyle(
-                      color:
-                          !isCardView ? const Color(0xFFFFA724) : Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: _refreshData,
-                  icon: const Icon(Icons.refresh, color: Color(0xFF316954)),
-                ),
-              ],
-            ),
-            const Divider(height: 1, thickness: 1),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
+            const SizedBox(height: 5),
             if (_isLoading)
               const Center(
                 child: Padding(
@@ -312,19 +280,17 @@ class _CommunityPageState extends State<CommunityPage> {
                 ),
               )
             else if (filteredPosts.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    '게시글이 없습니다.',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      '게시글이 없습니다.',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
                   ),
-                ),
-              )
-            else
-              isCardView
-                  ? _buildHorizontalCardList()
-                  : _buildVerticalCategoryList(),
+                )
+              else
+                _buildVerticalCategoryList(),
           ],
         ),
       ),
