@@ -1,12 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../firebase_options.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'notificationManager.dart';
 
 // 백그라운드 메시지 핸들러
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp(
@@ -23,57 +26,124 @@ class FCMHandler {
   factory FCMHandler() => _instance;
   FCMHandler._internal();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  final _storage = const FlutterSecureStorage();
 
   // FCM 초기화
   Future<void> initialize() async {
     try {
-      // 권한 요청
-      await _requestPermission();
+      print('FCM 초기화 시작...');
 
-      // FCM 토큰 가져오기
-      String? token = await _firebaseMessaging.getToken();
-      if (token != null) {
-        print('FCM 토큰: $token');
-        await _registerTokenToServer(token);
+      // Firebase 초기화
+      print('Firebase 초기화 시작...');
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      print('Firebase 초기화 완료');
+
+      // FCM 권한 요청
+      print('FCM 권한 요청 시작...');
+      await _messaging.requestPermission(alert: true, badge: true, sound: true);
+      print('FCM 권한 요청 완료');
+
+      // 로컬 알림 초기화
+      print('로컬 알림 초기화 시작...');
+      const initializationSettingsAndroid = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
+      const initializationSettingsIOS = DarwinInitializationSettings();
+      const initializationSettings = InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      );
+
+      await _localNotifications.initialize(initializationSettings);
+      print('로컬 알림 초기화 완료');
+
+      // FCM 토큰 가져오기 및 저장 (재시도 로직 추가)
+      print('FCM 토큰 가져오기 시작...');
+      String? fcmToken;
+      int retryCount = 0;
+      const maxRetries = 3;
+
+      while (fcmToken == null && retryCount < maxRetries) {
+        try {
+          fcmToken = await _messaging.getToken();
+          if (fcmToken != null) {
+            print('FCM 토큰 획득 성공: $fcmToken');
+            break;
+          }
+        } catch (e) {
+          print('FCM 토큰 가져오기 시도 ${retryCount + 1} 실패: $e');
+          retryCount++;
+          if (retryCount < maxRetries) {
+            print('3초 후 재시도...');
+            await Future.delayed(const Duration(seconds: 3));
+          }
+        }
+      }
+
+      if (fcmToken != null) {
+        await _storage.write(key: 'fcm_token', value: fcmToken);
+        try {
+          await NotificationManager().updateFcmToken(fcmToken);
+          print('FCM 토큰 저장 완료');
+        } catch (e) {
+          print('FCM 토큰 서버 업데이트 실패: $e');
+          // 토큰 저장은 성공했으므로 계속 진행
+        }
+      } else {
+        print('FCM 토큰을 가져오지 못했습니다. 알림 기능이 제한될 수 있습니다.');
+        // 토큰이 없어도 계속 진행
       }
 
       // 토큰 갱신 리스너
-      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+      _messaging.onTokenRefresh.listen((newToken) async {
         print('FCM 토큰 갱신: $newToken');
-        _registerTokenToServer(newToken);
+        await _storage.write(key: 'fcm_token', value: newToken);
+        try {
+          await NotificationManager().updateFcmToken(newToken);
+        } catch (e) {
+          print('FCM 토큰 갱신 서버 업데이트 실패: $e');
+        }
       });
 
       // 포그라운드 메시지 핸들러
-      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('포그라운드 메시지 수신: ${message.messageId}');
+        _showNotification(message);
+      });
 
       // 백그라운드 메시지 핸들러
-      FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
 
       // 알림 클릭 핸들러
       FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationClick);
 
-      print('FCM 핸들러 초기화 완료');
+      print('FCM 초기화 완료');
     } catch (e) {
-      print('FCM 핸들러 초기화 실패: $e');
+      print('FCM 초기화 실패: $e');
+      // FCM 초기화 실패는 치명적이지 않으므로 에러를 던지지 않음
+      print('FCM 초기화 실패로 인해 알림 기능이 제한될 수 있습니다.');
     }
   }
 
   // 알림 권한 요청
   Future<void> _requestPermission() async {
     try {
-      NotificationSettings settings = await _firebaseMessaging
-          .requestPermission(
-            alert: true,
-            announcement: false,
-            badge: true,
-            carPlay: false,
-            criticalAlert: false,
-            provisional: false,
-            sound: true,
-          );
+      NotificationSettings settings = await _messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
 
       print('알림 권한 상태: ${settings.authorizationStatus}');
     } catch (e) {
@@ -110,7 +180,7 @@ class FCMHandler {
   }
 
   // 포그라운드 메시지 처리
-  void _handleForegroundMessage(RemoteMessage message) {
+  void _showNotification(RemoteMessage message) {
     print('포그라운드 메시지 수신: ${message.messageId}');
 
     try {
@@ -127,77 +197,6 @@ class FCMHandler {
       }
     } catch (e) {
       print('포그라운드 메시지 처리 실패: $e');
-    }
-  }
-
-  // 백그라운드 메시지 처리
-  static Future<void> _handleBackgroundMessage(RemoteMessage message) async {
-    print('백그라운드 메시지 수신: ${message.messageId}');
-
-    try {
-      // 백그라운드에서는 로컬 알림을 표시할 수 없으므로
-      // 서버에 수신 확인만 처리
-      if (message.data['notificationId'] != null) {
-        await _markBackgroundNotificationAsReceived(
-          int.parse(message.data['notificationId']),
-        );
-      }
-    } catch (e) {
-      print('백그라운드 메시지 처리 실패: $e');
-    }
-  }
-
-  // 백그라운드 알림 수신 확인
-  static Future<void> _markBackgroundNotificationAsReceived(
-    int notificationId,
-  ) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
-
-      if (authToken != null) {
-        final dio = Dio();
-        dio.options.headers['Authorization'] = 'Bearer $authToken';
-
-        await dio.put(
-          'http://ocb.iptime.org:8080/api/notifications/$notificationId/received',
-        );
-      }
-    } catch (e) {
-      print('백그라운드 알림 수신 확인 실패: $e');
-    }
-  }
-
-  // 알림 클릭 처리
-  void _handleNotificationClick(RemoteMessage message) {
-    print('알림 클릭: ${message.messageId}');
-
-    try {
-      Map<String, dynamic> data = message.data;
-      String type = data['type'] ?? '';
-      String referenceId = data['referenceId'] ?? '';
-
-      // 알림 타입에 따른 처리
-      switch (type) {
-        case 'chat':
-          // 채팅 화면으로 이동
-          print('채팅 알림 클릭: $referenceId');
-          break;
-        case 'friend_request':
-          // 친구 요청 화면으로 이동
-          print('친구 요청 알림 클릭: $referenceId');
-          break;
-        case 'meeting':
-          // 모임 알림 화면으로 이동
-          print('모임 알림 클릭: $referenceId');
-          break;
-        default:
-          // 일반 알림 처리
-          print('일반 알림 클릭: $referenceId');
-          break;
-      }
-    } catch (e) {
-      print('알림 클릭 처리 실패: $e');
     }
   }
 
@@ -256,7 +255,7 @@ class FCMHandler {
 
   // FCM 토큰 가져오기
   Future<String?> getToken() async {
-    return await _firebaseMessaging.getToken();
+    return await _messaging.getToken();
   }
 
   // 알림 설정 변경
@@ -266,13 +265,46 @@ class FCMHandler {
     bool? sound,
   }) async {
     try {
-      await _firebaseMessaging.requestPermission(
+      await _messaging.requestPermission(
         alert: alert ?? true,
         badge: badge ?? true,
         sound: sound ?? true,
       );
     } catch (e) {
       print('알림 설정 변경 실패: $e');
+    }
+  }
+
+  // 알림 클릭 처리
+  void _handleNotificationClick(RemoteMessage message) {
+    print('알림 클릭: ${message.messageId}');
+
+    try {
+      Map<String, dynamic> data = message.data;
+      String type = data['type'] ?? '';
+      String referenceId = data['referenceId'] ?? '';
+
+      // 알림 타입에 따른 처리
+      switch (type) {
+        case 'chat':
+          // 채팅 화면으로 이동
+          print('채팅 알림 클릭: $referenceId');
+          break;
+        case 'friend_request':
+          // 친구 요청 화면으로 이동
+          print('친구 요청 알림 클릭: $referenceId');
+          break;
+        case 'meeting':
+          // 모임 알림 화면으로 이동
+          print('모임 알림 클릭: $referenceId');
+          break;
+        default:
+          // 일반 알림 처리
+          print('일반 알림 클릭: $referenceId');
+          break;
+      }
+    } catch (e) {
+      print('알림 클릭 처리 실패: $e');
     }
   }
 }

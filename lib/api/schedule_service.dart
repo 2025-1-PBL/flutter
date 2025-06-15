@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'auth_service.dart';
 import 'config.dart';
 
@@ -118,9 +119,13 @@ class ScheduleService {
   ) async {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
+
+      // 날짜와 시간 데이터 처리
+      final processedData = _processDateTimeData(scheduleData);
+
       final response = await _dio.post(
         '${ApiConfig.scheduleUrl}?userId=$userId',
-        data: scheduleData,
+        data: processedData,
         options: Options(headers: headers),
       );
       return response.data;
@@ -135,13 +140,65 @@ class ScheduleService {
   ) async {
     return await _handleApiCall(() async {
       final headers = await _getHeaders();
+
+      // 날짜와 시간 데이터 처리
+      final processedData = _processDateTimeData(scheduleData);
+
       final response = await _dio.put(
         '${ApiConfig.scheduleUrl}/$scheduleId?userId=$userId',
-        data: scheduleData,
+        data: processedData,
         options: Options(headers: headers),
       );
       return response.data;
     });
+  }
+
+  // 날짜와 시간 데이터 처리 헬퍼 메서드
+  Map<String, dynamic> _processDateTimeData(Map<String, dynamic> data) {
+    final processedData = Map<String, dynamic>.from(data);
+
+    // 날짜와 시간 데이터 처리
+    if (data['date'] != null && data['time'] != null) {
+      DateTime date =
+          data['date'] is DateTime
+              ? data['date'] as DateTime
+              : DateTime.parse(data['date']);
+
+      String timeStr =
+          data['time'] is TimeOfDay
+              ? '${(data['time'] as TimeOfDay).hour.toString().padLeft(2, '0')}:${(data['time'] as TimeOfDay).minute.toString().padLeft(2, '0')}'
+              : data['time'] as String;
+
+      // 시간 문자열을 파싱
+      final timeParts = timeStr.split(':');
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+
+      // 날짜와 시간을 합쳐서 datetime 생성
+      final reminderDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        hour,
+        minute,
+      );
+
+      // reminderTime에 datetime 저장 (camelCase로 변경)
+      print('생성된 reminderTime: ${reminderDateTime.toIso8601String()}');
+      processedData['reminderTime'] = reminderDateTime.toIso8601String();
+
+      // 알림 활성화 설정 추가
+      processedData['reminderEnabled'] = true;
+
+      // 기존 date와 time 필드는 제거
+      processedData.remove('date');
+      processedData.remove('time');
+    }
+
+    // 요청 데이터 확인을 위한 로그
+    print('서버로 전송할 데이터: $processedData');
+
+    return processedData;
   }
 
   // 일정 삭제

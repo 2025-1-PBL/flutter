@@ -1,213 +1,83 @@
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 import 'dart:convert';
-import 'package:dio/dio.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../api/config.dart';
+import 'notificationManager.dart';
 
 class WebSocketService {
-  static final WebSocketService _instance = WebSocketService._internal();
-  factory WebSocketService() => _instance;
-  WebSocketService._internal();
+  late StompClient _stompClient;
+  final _storage = const FlutterSecureStorage();
+  bool _isConnected = false;
 
-  late StompClient stompClient;
-  bool isConnected = false;
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  // 웹소켓 연결 초기화
   Future<void> initializeWebSocket() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
-
-      if (authToken == null) {
-        print('인증 토큰이 없어 웹소켓 연결을 건너뜁니다.');
-        return;
+      final token = await _storage.read(key: 'token');
+      if (token == null) {
+        throw NotificationError('인증 토큰이 없습니다', null);
       }
 
-      stompClient = StompClient(
+      _stompClient = StompClient(
         config: StompConfig(
-          url: 'ws://ocb.iptime.org:8080/ws', // 실제 서버 웹소켓 엔드포인트
-          onConnect: onConnect,
-          onDisconnect: onDisconnect,
-          onWebSocketError: onError,
-          stompConnectHeaders: {'Authorization': 'Bearer $authToken'},
-          webSocketConnectHeaders: {'Authorization': 'Bearer $authToken'},
-          reconnectDelay: const Duration(seconds: 5),
+          url: 'ws://ocb.iptime.org:8080/ws',
+          onConnect: _onConnect,
+          onDisconnect: _onDisconnect,
+          onWebSocketError: (dynamic error) => print('WebSocket 에러: $error'),
+          stompConnectHeaders: {'Authorization': 'Bearer $token'},
+          webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
         ),
       );
 
-      connect();
-    } catch (e) {
-      print('웹소켓 초기화 실패: $e');
-    }
-  }
+      _stompClient.activate();
 
-  // 연결
-  void connect() {
-    if (!isConnected) {
-      stompClient.activate();
-    }
-  }
+      // 연결이 완료될 때까지 대기
+      int retryCount = 0;
+      while (!_isConnected && retryCount < 5) {
+        await Future.delayed(const Duration(seconds: 1));
+        retryCount++;
+      }
 
-  // 연결 해제
-  void disconnect() {
-    if (isConnected) {
-      stompClient.deactivate();
-      isConnected = false;
-    }
-  }
-
-  // 연결 성공 시
-  void onConnect(StompFrame frame) {
-    isConnected = true;
-    print('웹소켓 연결 성공');
-
-    // 사용자별 알림 구독
-    stompClient.subscribe(
-      destination: '/user/queue/notifications',
-      callback: (StompFrame frame) {
-        if (frame.body != null) {
-          try {
-            final Map<String, dynamic> notification = json.decode(frame.body!);
-            handleNotification(notification);
-          } catch (e) {
-            print('알림 파싱 실패: $e');
-          }
-        }
-      },
-    );
-
-    // 일반 알림 구독 (모든 사용자)
-    stompClient.subscribe(
-      destination: '/topic/notifications',
-      callback: (StompFrame frame) {
-        if (frame.body != null) {
-          try {
-            final Map<String, dynamic> notification = json.decode(frame.body!);
-            handleNotification(notification);
-          } catch (e) {
-            print('일반 알림 파싱 실패: $e');
-          }
-        }
-      },
-    );
-
-    // 연결 메시지 전송
-    stompClient.send(
-      destination: '/app/notifications.connect',
-      body: json.encode({
-        'status': 'connected',
-        'timestamp': DateTime.now().toIso8601String(),
-      }),
-    );
-  }
-
-  // 연결 해제 시
-  void onDisconnect(StompFrame frame) {
-    isConnected = false;
-    print('웹소켓 연결 해제');
-  }
-
-  // 오류 발생 시
-  void onError(dynamic error) {
-    print('웹소켓 오류: $error');
-    isConnected = false;
-  }
-
-  // 알림 처리
-  void handleNotification(Map<String, dynamic> notification) {
-    try {
-      String title = notification['title'] ?? '새 알림';
-      String message = notification['message'] ?? '';
-      String type = notification['type'] ?? '';
-      int referenceId = notification['referenceId'] ?? 0;
-      int notificationId = notification['id'] ?? 0;
-
-      print('실시간 알림 수신: $title - $message');
-
-      // 로컬 알림 표시
-      _showLocalNotification(title, message, type, referenceId, notificationId);
-
-      // 서버에 읽음 처리 요청 (선택사항)
-      _markNotificationAsReceived(notificationId);
-    } catch (e) {
-      print('알림 처리 실패: $e');
-    }
-  }
-
-  // 로컬 알림 표시
-  Future<void> _showLocalNotification(
-    String title,
-    String message,
-    String type,
-    int referenceId,
-    int notificationId,
-  ) async {
-    try {
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
-            'realtime_notifications',
-            '실시간 알림',
-            importance: Importance.high,
-            priority: Priority.high,
-            showWhen: true,
-            enableVibration: true,
-            playSound: true,
-          );
-
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-      );
-
-      await flutterLocalNotificationsPlugin.show(
-        notificationId,
-        title,
-        message,
-        platformChannelSpecifics,
-        payload: json.encode({
-          'type': type,
-          'referenceId': referenceId,
-          'notificationId': notificationId,
-        }),
-      );
-    } catch (e) {
-      print('로컬 알림 표시 실패: $e');
-    }
-  }
-
-  // 서버에 알림 수신 확인
-  Future<void> _markNotificationAsReceived(int notificationId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
-
-      if (authToken != null) {
-        final dio = Dio();
-        dio.options.headers['Authorization'] = 'Bearer $authToken';
-
-        await dio.put(
-          'http://ocb.iptime.org:8080/api/notifications/$notificationId/received',
-        );
+      if (!_isConnected) {
+        throw NotificationError('WebSocket 연결 시간 초과', null);
       }
     } catch (e) {
-      print('알림 수신 확인 실패: $e');
+      throw NotificationError('WebSocket 초기화 실패', e);
     }
   }
 
-  // 연결 상태 확인
-  bool get isWebSocketConnected => isConnected;
+  void _onConnect(StompFrame frame) {
+    print('WebSocket 연결됨');
+    _isConnected = true;
 
-  // 수동으로 연결 재시도
-  void reconnect() {
-    if (!isConnected) {
-      print('웹소켓 재연결 시도');
-      connect();
-    }
+    // 알림 구독
+    _stompClient.subscribe(
+      destination: '/user/queue/notifications',
+      callback: (frame) {
+        if (frame.body != null) {
+          final notification = json.decode(frame.body!);
+          _handleNotification(notification);
+        }
+      },
+    );
   }
 
-  // 서비스 정리
+  void _onDisconnect(StompFrame frame) {
+    print('WebSocket 연결 해제');
+    _isConnected = false;
+  }
+
+  void _handleNotification(Map<String, dynamic> notification) {
+    // 알림 처리 로직
+    print('새로운 알림 수신: $notification');
+
+    // NotificationManager를 통해 알림 처리
+    NotificationManager().getUnreadCount().then((count) {
+      print('읽지 않은 알림 수: $count');
+    });
+  }
+
   void dispose() {
-    disconnect();
+    if (_isConnected) {
+      _stompClient.deactivate();
+    }
   }
 }
