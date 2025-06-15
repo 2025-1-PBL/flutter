@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../notification/notificationService.dart';
 import '../api/notification_service.dart';
+import '../notification/websocketService.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -16,11 +17,24 @@ class _NotificationPageState extends State<NotificationPage> {
   final LocalNotificationService _localNotificationService =
       LocalNotificationService();
   final NotificationService _notificationService = NotificationService();
+  final WebSocketService _webSocketService = WebSocketService();
 
   @override
   void initState() {
     super.initState();
     fetchNotifications();
+    _setupWebSocket();
+  }
+
+  @override
+  void dispose() {
+    _webSocketService.dispose();
+    super.dispose();
+  }
+
+  // 웹소켓 설정
+  void _setupWebSocket() {
+    _webSocketService.initializeWebSocket();
   }
 
   // 알림 목록 가져오기
@@ -58,6 +72,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> checkNewNotifications() async {
     try {
       await _localNotificationService.checkNotificationsManually();
+      await fetchNotifications(); // 알림 목록 새로고침
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -268,25 +283,30 @@ class _NotificationPageState extends State<NotificationPage> {
   void _navigateToNotificationTarget(NotificationItem notification) {
     switch (notification.type) {
       case 'NEW_COMMENT':
-        // 댓글이 달린 게시글로 이동
         Navigator.pushNamed(
           context,
           '/community/post/${notification.referenceId}',
         );
         break;
       case 'NEW_ARTICLE':
-        // 새 게시글로 이동
         Navigator.pushNamed(
           context,
           '/community/post/${notification.referenceId}',
         );
         break;
       case 'SCHEDULE_REMINDER':
-        // 일정 상세로 이동
         Navigator.pushNamed(context, '/schedule/${notification.referenceId}');
         break;
+      case 'CHAT':
+        Navigator.pushNamed(context, '/chat/${notification.referenceId}');
+        break;
+      case 'FRIEND_REQUEST':
+        Navigator.pushNamed(context, '/friends/requests');
+        break;
+      case 'MEETING':
+        Navigator.pushNamed(context, '/meeting/${notification.referenceId}');
+        break;
       default:
-        // 기본적으로 홈으로 이동
         Navigator.pushNamed(context, '/home');
     }
   }

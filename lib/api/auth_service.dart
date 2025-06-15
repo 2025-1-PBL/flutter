@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final Dio _dio = Dio();
@@ -9,20 +10,37 @@ class AuthService {
   // 로그인
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
+      print('로그인 시도: $username');
       final response = await _dio.post(
         '${ApiConfig.authUrl}/authenticate',
         data: {'username': username, 'password': password},
       );
 
-      final token = response.data['token'];
-      final refreshToken = response.data['refreshToken'];
+      if (response.statusCode == 200) {
+        print('로그인 응답 데이터: ${response.data}');
 
-      await _storage.write(key: 'token', value: token);
-      await _storage.write(key: 'refreshToken', value: refreshToken);
+        final token = response.data['token'];
+        final refreshToken = response.data['refreshToken'];
 
-      return response.data;
+        if (token == null || refreshToken == null) {
+          throw Exception('토큰이 응답에 포함되어 있지 않습니다.');
+        }
+
+        // 토큰 저장
+        await _storage.write(key: 'token', value: token);
+        await _storage.write(key: 'refreshToken', value: refreshToken);
+
+        // 사용자 정보 저장
+        await saveUserInfo(response.data);
+        print('로그인 성공 및 사용자 정보 저장 완료');
+
+        return response.data;
+      } else {
+        throw Exception('로그인에 실패했습니다: ${response.statusCode}');
+      }
     } catch (e) {
-      throw Exception('로그인에 실패했습니다: $e');
+      print('로그인 실패: $e');
+      rethrow;
     }
   }
 
@@ -300,6 +318,29 @@ class AuthService {
     } catch (e) {
       print('needsReLogin - 오류: $e');
       return true;
+    }
+  }
+
+  Future<void> saveUserInfo(Map<String, dynamic> userData) async {
+    try {
+      print('사용자 정보 저장 시작: $userData');
+      final prefs = await SharedPreferences.getInstance();
+
+      // 토큰 저장
+      await prefs.setString('token', userData['token']);
+      await prefs.setString('refreshToken', userData['refreshToken']);
+
+      // 사용자 ID 저장
+      if (userData['id'] != null) {
+        await prefs.setString('user_id', userData['id'].toString());
+        print('사용자 정보 저장 완료 - ID: ${userData['id']}');
+      } else {
+        print('경고: 사용자 ID가 응답에 포함되어 있지 않습니다.');
+        print('전체 응답 데이터: $userData');
+      }
+    } catch (e) {
+      print('사용자 정보 저장 실패: $e');
+      rethrow;
     }
   }
 }

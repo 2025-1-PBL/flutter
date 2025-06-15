@@ -3,116 +3,104 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../api/config.dart';
+import '../api/auth_service.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
   factory WebSocketService() => _instance;
   WebSocketService._internal();
 
-  late StompClient stompClient;
-  bool isConnected = false;
+  StompClient? _stompClient;
+  final AuthService _authService = AuthService();
+  bool _isConnected = false;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  bool get isConnected => _isConnected;
 
   // 웹소켓 연결 초기화
   Future<void> initializeWebSocket() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
-
-      if (authToken == null) {
-        print('인증 토큰이 없어 웹소켓 연결을 건너뜁니다.');
-        return;
-      }
-
-      stompClient = StompClient(
-        config: StompConfig(
-          url: 'ws://ocb.iptime.org:8080/ws', // 실제 서버 웹소켓 엔드포인트
-          onConnect: onConnect,
-          onDisconnect: onDisconnect,
-          onWebSocketError: onError,
-          stompConnectHeaders: {'Authorization': 'Bearer $authToken'},
-          webSocketConnectHeaders: {'Authorization': 'Bearer $authToken'},
-          reconnectDelay: const Duration(seconds: 5),
-        ),
-      );
-
-      connect();
+      await connect();
     } catch (e) {
       print('웹소켓 초기화 실패: $e');
     }
   }
 
   // 연결
-  void connect() {
-    if (!isConnected) {
-      stompClient.activate();
+  Future<void> connect() async {
+    if (_isConnected) {
+      print('이미 연결되어 있습니다.');
+      return;
+    }
+
+    try {
+      print('웹소켓 연결 시도...');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('토큰이 없습니다. 로그인이 필요합니다.');
+        return;
+      }
+
+      // 현재 사용자 정보 가져오기
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null || currentUser['id'] == null) {
+        print('사용자 정보를 가져올 수 없습니다.');
+        return;
+      }
+
+      final userId = currentUser['id'].toString();
+      print('웹소켓 연결 - 사용자 ID: $userId');
+
+      _stompClient = StompClient(
+        config: StompConfig(
+          url: 'ws://ocb.iptime.org:8080/ws',
+          onConnect: (StompFrame frame) {
+            print('웹소켓 연결 성공');
+            _isConnected = true;
+            _stompClient?.send(
+              destination: '/app/connect',
+              body: '{"userId": "$userId"}',
+            );
+            print('연결 메시지 전송 완료 - userId: $userId');
+          },
+          onDisconnect: (StompFrame frame) {
+            print('웹소켓 연결 해제');
+            _isConnected = false;
+          },
+          onWebSocketError: (dynamic error) {
+            print('웹소켓 에러: $error');
+            _isConnected = false;
+          },
+          onStompError: (StompFrame frame) {
+            print('STOMP 에러: ${frame.body}');
+            _isConnected = false;
+          },
+          onDebugMessage: (String msg) {
+            print('STOMP 디버그: $msg');
+          },
+          stompConnectHeaders: {'Authorization': 'Bearer $token'},
+          webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      _stompClient?.activate();
+      print('웹소켓 클라이언트 활성화됨');
+    } catch (e) {
+      print('웹소켓 연결 실패: $e');
+      _isConnected = false;
     }
   }
 
   // 연결 해제
   void disconnect() {
-    if (isConnected) {
-      stompClient.deactivate();
-      isConnected = false;
+    if (_isConnected) {
+      _stompClient?.deactivate();
+      _isConnected = false;
     }
-  }
-
-  // 연결 성공 시
-  void onConnect(StompFrame frame) {
-    isConnected = true;
-    print('웹소켓 연결 성공');
-
-    // 사용자별 알림 구독
-    stompClient.subscribe(
-      destination: '/user/queue/notifications',
-      callback: (StompFrame frame) {
-        if (frame.body != null) {
-          try {
-            final Map<String, dynamic> notification = json.decode(frame.body!);
-            handleNotification(notification);
-          } catch (e) {
-            print('알림 파싱 실패: $e');
-          }
-        }
-      },
-    );
-
-    // 일반 알림 구독 (모든 사용자)
-    stompClient.subscribe(
-      destination: '/topic/notifications',
-      callback: (StompFrame frame) {
-        if (frame.body != null) {
-          try {
-            final Map<String, dynamic> notification = json.decode(frame.body!);
-            handleNotification(notification);
-          } catch (e) {
-            print('일반 알림 파싱 실패: $e');
-          }
-        }
-      },
-    );
-
-    // 연결 메시지 전송
-    stompClient.send(
-      destination: '/app/notifications.connect',
-      body: json.encode({
-        'status': 'connected',
-        'timestamp': DateTime.now().toIso8601String(),
-      }),
-    );
-  }
-
-  // 연결 해제 시
-  void onDisconnect(StompFrame frame) {
-    isConnected = false;
-    print('웹소켓 연결 해제');
-  }
-
-  // 오류 발생 시
-  void onError(dynamic error) {
-    print('웹소켓 오류: $error');
-    isConnected = false;
   }
 
   // 알림 처리
@@ -196,11 +184,11 @@ class WebSocketService {
   }
 
   // 연결 상태 확인
-  bool get isWebSocketConnected => isConnected;
+  bool get isWebSocketConnected => _isConnected;
 
   // 수동으로 연결 재시도
   void reconnect() {
-    if (!isConnected) {
+    if (!_isConnected) {
       print('웹소켓 재연결 시도');
       connect();
     }

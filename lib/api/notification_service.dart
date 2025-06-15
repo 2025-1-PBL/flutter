@@ -3,11 +3,39 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'config.dart';
 
 class NotificationService {
-  final Dio _dio = Dio();
+  late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  NotificationService() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.baseUrl,
+        connectTimeout: Duration(milliseconds: ApiConfig.connectTimeout),
+        receiveTimeout: Duration(milliseconds: ApiConfig.receiveTimeout),
+      ),
+    );
+
+    // 디버그 로깅 추가
+    _dio.interceptors.add(
+      LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
+        responseBody: true,
+        error: true,
+      ),
+    );
+  }
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.read(key: 'token');
+    print('현재 토큰: $token'); // 토큰 확인용 로그
+
+    if (token == null) {
+      throw Exception('인증 토큰이 없습니다. 다시 로그인해주세요.');
+    }
+
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -18,12 +46,31 @@ class NotificationService {
   Future<List<dynamic>> getUserNotifications() async {
     try {
       final headers = await _getHeaders();
+      print('알림 요청 URL: ${ApiConfig.notificationUrl}');
+      print('알림 요청 헤더: $headers');
+
       final response = await _dio.get(
         ApiConfig.notificationUrl,
-        options: Options(headers: headers),
+        options: Options(
+          headers: headers,
+          validateStatus: (status) {
+            return status! < 500; // 500 이상의 에러만 throw
+          },
+        ),
       );
-      return response.data as List<dynamic>;
+
+      print('알림 응답 상태: ${response.statusCode}');
+      print('알림 응답 데이터: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      } else if (response.statusCode == 401) {
+        throw Exception('인증이 만료되었습니다. 다시 로그인해주세요.');
+      } else {
+        throw Exception('서버 오류: ${response.statusCode}');
+      }
     } catch (e) {
+      print('알림 목록 가져오기 실패 상세: $e');
       throw Exception('알림 목록을 불러오는데 실패했습니다: $e');
     }
   }
