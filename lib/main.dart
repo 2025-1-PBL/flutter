@@ -6,8 +6,17 @@ import 'splash.dart';
 import 'home/home_screen.dart';
 import 'api/auth_service.dart';
 import 'api/social_login_service.dart';
+import 'notification/setupFCM.dart';
+import 'notification/fcmHandler.dart';
+import 'notification/notificationScreen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // FCM 및 알림 기능 초기화
+  await setupFCM();
+  await setupNotifications();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => FriendProvider(),
@@ -29,6 +38,7 @@ class MapMoaApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/notifications': (context) => NotificationsScreen(),
       },
     );
   }

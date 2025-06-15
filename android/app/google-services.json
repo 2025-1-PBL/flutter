@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "79271992187",
+    "project_id": "mapmo-2748a",
+    "storage_bucket": "mapmo-2748a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79271992187:android:ae337bf1959a4b5832fbde",
+        "android_client_info": {
+          "package_name": "com.example.mapmoa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDP6NnaYINIow716bexnGemrGCJPc2cr_c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
