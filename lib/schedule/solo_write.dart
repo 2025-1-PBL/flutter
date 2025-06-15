@@ -84,8 +84,9 @@ class SoloWritePage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // 여기에 날짜랑 시간 넣어주삼여
                         Text(
-                          item['location'] ?? '',
+                          item['memo'] ?? '',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -94,7 +95,7 @@ class SoloWritePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          item['memo'] ?? '',
+                          item['location'] ?? '',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
