@@ -234,11 +234,7 @@ class _FindPasswordScreenState extends State<FindPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isEmailTab)
-                    ...[
-                      _buildInputField('이메일', '6-12자 이내의 영문/숫자', idController),
-                      const SizedBox(height: 16),
-                    ],
+                  // 이메일 탭일 경우 '이메일' 입력란은 제거되었습니다.
                   _buildInputField('이름', '이름을 입력해 주세요.', nameController),
                   const SizedBox(height: 16),
                   _buildRowInputWithButton(

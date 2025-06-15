@@ -7,6 +7,7 @@ import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_page.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'notification_page.dart';
 import 'package:geolocator/geolocator.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -298,50 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MyInfoEditScreen(),
-                        ),
-                      );
-                      // 마이페이지에서 돌아온 후 데이터 새로고침
-                      if (mounted) {
-                        await _loadData();
-                      }
-                    },
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 42,
-                          backgroundColor: const Color(0xFFE0E0E0),
-                          child: const Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Column(
-                          children: [
-                            Text(
-                              '${_currentUser?['name'] ?? '사용자'} 님',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '오늘은 ${allSchedules.length}개의 일정이 있어요!',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildProfileSection(), // ✅ 변경된 부분
                   const SizedBox(height: 16),
                   SizedBox(height: boxHeight, child: _buildScheduleCard()),
                   const SizedBox(height: 16),
@@ -353,6 +311,92 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MyInfoEditScreen(),
+          ),
+        );
+        if (mounted) {
+          await _loadData();
+        }
+      },
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              // 프로필 아이콘
+              CircleAvatar(
+                radius: 42,
+                backgroundColor: const Color(0xFFE0E0E0),
+                child: const Icon(
+                  Icons.person,
+                  size: 40,
+                  color: Colors.white,
+                ),
+              ),
+
+              // 알림 뱃지 버튼
+              Positioned(
+                top: -2,
+                right: -2,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotificationPage()),
+                    );
+                  },
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFFFCC00),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '3', // 알림 수 (이후 상태 변수로 변경 가능)
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Column(
+            children: [
+              Text(
+                '${_currentUser?['name'] ?? '사용자'} 님',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '오늘은 ${allSchedules.length}개의 일정이 있어요!',
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -599,9 +643,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 size: 18,
                               ),
                               const SizedBox(width: 5),
-                              Text(
-                                posts[index]['location'] ?? '',
-                                style: const TextStyle(fontSize: 14),
+                              Flexible( // ✅ 이 부분 추가
+                                child: Text(
+                                  posts[index]['location'] ?? '',
+                                  style: const TextStyle(fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(width: 5),
                               Expanded(
