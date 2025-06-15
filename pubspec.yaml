@@ -16,7 +16,7 @@ dependencies:
   #FCM 관련 패키지 추가
   firebase_core: ^2.25.3
   firebase_messaging: ^14.7.10
-  flutter_local_notifications: ^16.3.1+1
+  flutter_local_notifications: ^19.2.1
 
   # 웹소켓 관련 패키지
   stomp_dart_client: ^2.0.0  # 최신 버전 확인 필요
