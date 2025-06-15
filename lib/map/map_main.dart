@@ -110,7 +110,7 @@ class _MapMainPageState extends State<MapMainPage> {
           SnackBar(
             content: Text('일정을 불러오는데 실패했습니다: $e'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.black,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -333,26 +333,63 @@ class _MapMainPageState extends State<MapMainPage> {
     }
   }
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, {Color iconColor = Colors.orange}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.grey[900],
-        content: Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w500,
-            ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+        duration: const Duration(seconds: 3),
+        content: Container(
+          height: 80,
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.place, color: iconColor, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.split('\n').first, // 메모
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF767676),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      message.split('\n').length > 1
+                          ? message.split('\n')[1]
+                          : '',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -525,59 +562,77 @@ class _MapMainPageState extends State<MapMainPage> {
           ),
           Positioned(
             top: 40,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            left: 40, // ← 마진 적용
+            right: 40, // ← 마진 적용
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                FloatingActionButton(
-                  mini: true,
-                  heroTag: 'menu',
-                  backgroundColor: Colors.white,
-                  onPressed: () {
-                    setState(() {
-                      _isMenuOpen = !_isMenuOpen;
-                    });
-                  },
-                  child: Icon(
-                    _isMenuOpen ? Icons.close : Icons.menu,
-                    color: Colors.black,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    FloatingActionButton(
+                      mini: true,
+                      heroTag: 'menu',
+                      backgroundColor: Colors.white,
+                      onPressed: () {
+                        setState(() {
+                          _isMenuOpen = !_isMenuOpen;
+                        });
+                      },
+                      child: Icon(
+                        _isMenuOpen ? Icons.close : Icons.menu,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_isMenuOpen) ...[
+                      _buildMenuButton(Icons.my_location, '현재 위치'),
+                      const SizedBox(height: 8),
+                      _buildMenuButton(Icons.person, '개인 일정'),
+                      const SizedBox(height: 8),
+                      _buildMenuButton(Icons.groups, '공유 일정'),
+                      const SizedBox(height: 8),
+                      _buildMenuButton(Icons.event, '이벤트 목록'),
+                      const SizedBox(height: 8),
+                      _buildMenuButton(Icons.refresh, '새로고침'),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 8),
-                if (_isMenuOpen) ...[
-                  _buildMenuButton(Icons.my_location, '현재 위치'),
-                  const SizedBox(height: 8),
-                  _buildMenuButton(Icons.person, '개인 일정'),
-                  const SizedBox(height: 8),
-                  _buildMenuButton(Icons.groups, '공유 일정'),
-                  const SizedBox(height: 8),
-                  _buildMenuButton(Icons.event, '이벤트 목록'),
-                  const SizedBox(height: 8),
-                  _buildMenuButton(Icons.refresh, '새로고침'),
-                ],
               ],
             ),
           ),
           Positioned(
             bottom: 90,
-            right: 20,
-            child: FloatingActionButton(
-              heroTag: 'zoom_in',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _zoomIn,
-              child: const Icon(Icons.zoom_in, color: Colors.black),
+            left: 40, // 마진
+            right: 40, // 마진
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  heroTag: 'zoom_in',
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: _zoomIn,
+                  child: const Icon(Icons.zoom_in, color: Colors.black),
+                ),
+              ],
             ),
           ),
           Positioned(
             bottom: 30,
-            right: 20,
-            child: FloatingActionButton(
-              heroTag: 'zoom_out',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _zoomOut,
-              child: const Icon(Icons.zoom_out, color: Colors.black),
+            left: 40,
+            right: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  heroTag: 'zoom_out',
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: _zoomOut,
+                  child: const Icon(Icons.zoom_out, color: Colors.black),
+                ),
+              ],
             ),
           ),
         ],

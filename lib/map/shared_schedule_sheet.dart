@@ -112,8 +112,10 @@ class _SharedScheduleSheetState extends State<SharedScheduleSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const Icon(Icons.groups, size: 24, color: Colors.black),
+                    const SizedBox(width: 8),
                     const Text(
-                      '👥  공유 일정',
+                      '공유 일정',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

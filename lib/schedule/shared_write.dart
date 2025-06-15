@@ -128,6 +128,14 @@ class _SharedWritePageState extends State<SharedWritePage> {
                     item['memo'] ?? '',
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
+                  const SizedBox(height: 8),
+
+                  if (item['createdAt'] != null)
+                    Text(
+                      DateTime.parse(item['createdAt']).toString().substring(0, 16),
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+
                   const Divider(height: 10),
                   ...comments.asMap().entries.map((entry) {
                     final idx = entry.key;
