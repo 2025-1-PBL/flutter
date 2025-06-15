@@ -60,17 +60,21 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
 
   Future<void> postUserProfileToDB(String imagePath) async {
     try {
+      print('프로필 이미지 업로드 시작: $imagePath');
+
       final token = await _authService.getStoredToken();
       if (token == null) {
         throw Exception('토큰이 없습니다.');
       }
 
       final response = await _userService.uploadProfileImage(imagePath);
+      print('서버 응답: $response');
 
       // 성공적으로 업로드된 경우
       setState(() {
         _image = XFile(imagePath);
       });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -85,6 +89,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
       // 사용자 정보 새로고침
       await _loadUserInfo();
     } catch (e) {
+      print('프로필 이미지 업로드 에러: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -266,6 +271,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                           }
                         }
                       } catch (e) {
+                        print('프로필 사진 저장 실패: $e');
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

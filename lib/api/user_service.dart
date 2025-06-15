@@ -57,13 +57,21 @@ class UserService {
   ) async {
     try {
       final headers = await _getHeaders();
+      print('사용자 정보 수정 요청 - userId: $userId, data: ${userData.keys}');
+
       final response = await _dio.put(
         '${ApiConfig.userUrl}/$userId',
         data: userData,
         options: Options(headers: headers),
       );
+
+      print('사용자 정보 수정 성공: ${response.statusCode}');
       return response.data;
     } catch (e) {
+      print('사용자 정보 수정 실패: $e');
+      if (e is DioException) {
+        print('Dio 에러 상세: ${e.response?.statusCode} - ${e.response?.data}');
+      }
       throw Exception('사용자 정보 수정에 실패했습니다: $e');
     }
   }
@@ -124,7 +132,7 @@ class UserService {
     }
   }
 
-  // 프로필 이미지 업로드 (임시 해결책)
+  // 프로필 이미지 업로드 (개선된 버전)
   Future<Map<String, dynamic>> uploadProfileImage(String imagePath) async {
     try {
       final token = await _storage.read(key: 'token');
@@ -142,28 +150,93 @@ class UserService {
         throw Exception('이미지 파일을 찾을 수 없습니다.');
       }
 
-      // 이미지 크기 확인 (100KB 제한으로 매우 엄격하게)
+      // 이미지 크기 확인 (5MB 제한으로 완화)
       final fileSize = await file.length();
-      if (fileSize > 100 * 1024) {
-        throw Exception('이미지 크기가 100KB를 초과합니다. 더 작은 이미지를 선택해주세요.');
+      if (fileSize > 5 * 1024 * 1024) {
+        // 5MB
+        throw Exception('이미지 크기가 5MB를 초과합니다. 더 작은 이미지를 선택해주세요.');
+      }
+
+      print('이미지 업로드 시작 - 파일 크기: ${fileSize} bytes');
+
+      // FormData로 이미지 업로드 (더 효율적)
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imagePath,
+          filename:
+              'profile_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      });
+
+      final headers = await _getHeaders();
+      headers['Content-Type'] = 'multipart/form-data';
+
+      // 이미지 업로드 전용 엔드포인트 사용
+      final response = await _dio.post(
+        '${ApiConfig.userUrl}/$userId/profile-image',
+        data: formData,
+        options: Options(headers: headers),
+      );
+
+      print('프로필 이미지 업로드 성공: ${response.data}');
+      return {'success': true, 'data': response.data};
+    } catch (e) {
+      print('프로필 이미지 업로드 실패: $e');
+      if (e is DioException) {
+        print('Dio 에러 상세: ${e.response?.statusCode} - ${e.response?.data}');
+
+        // 404 에러인 경우 기존 방식으로 fallback
+        if (e.response?.statusCode == 404) {
+          print('이미지 업로드 엔드포인트가 없습니다. 기존 방식으로 시도합니다.');
+          return await uploadProfileImageFallback(imagePath);
+        }
+      }
+      throw Exception('프로필 이미지 업로드에 실패했습니다: $e');
+    }
+  }
+
+  // 기존 Base64 방식 (fallback)
+  Future<Map<String, dynamic>> uploadProfileImageFallback(
+    String imagePath,
+  ) async {
+    try {
+      final token = await _storage.read(key: 'token');
+      if (token == null) {
+        throw Exception('토큰이 없습니다.');
+      }
+
+      // 현재 사용자 정보 가져오기
+      final currentUser = await _authService.getCurrentUser();
+      final userId = currentUser['id'];
+
+      // 이미지 파일 확인
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        throw Exception('이미지 파일을 찾을 수 없습니다.');
+      }
+
+      // 이미지 크기 확인 (2MB 제한)
+      final fileSize = await file.length();
+      if (fileSize > 2 * 1024 * 1024) {
+        // 2MB
+        throw Exception('이미지 크기가 2MB를 초과합니다. 더 작은 이미지를 선택해주세요.');
       }
 
       // 이미지를 base64로 인코딩
       final bytes = await file.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      // base64 문자열 길이 확인 (약 150KB 제한)
-      if (base64Image.length > 150 * 1024) {
-        throw Exception('이미지가 너무 큽니다. 더 작은 이미지를 선택해주세요.');
-      }
+      print('Base64 방식으로 이미지 업로드 시작 - 파일 크기: ${fileSize} bytes');
 
       // 사용자 정보 업데이트
       final response = await updateUser(userId, {
         'profilePic': 'data:image/png;base64,$base64Image',
       });
 
+      print('프로필 이미지 업로드 성공 (Base64 방식)');
       return {'success': true, 'data': response};
     } catch (e) {
+      print('프로필 이미지 업로드 실패 (Base64 방식): $e');
       throw Exception('프로필 이미지 업로드에 실패했습니다: $e');
     }
   }

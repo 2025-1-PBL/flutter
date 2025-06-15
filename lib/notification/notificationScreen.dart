@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'notificationService.dart';
 
 class NotificationsScreen extends StatefulWidget {
   @override
@@ -11,6 +12,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<NotificationItem> notifications = [];
   bool isLoading = true;
   final Dio _dio = Dio();
+  final LocalNotificationService _localNotificationService =
+      LocalNotificationService();
 
   @override
   void initState() {
@@ -56,6 +59,46 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('알림을 불러오는데 실패했습니다: $e')));
+    }
+  }
+
+  // 수동으로 새 알림 확인
+  Future<void> checkNewNotifications() async {
+    try {
+      await _localNotificationService.checkNotificationsManually();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('새 알림을 확인했습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('알림 확인에 실패했습니다: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  // 테스트 알림 표시
+  Future<void> showTestNotification() async {
+    try {
+      await _localNotificationService.showTestNotification();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('테스트 알림을 표시했습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('테스트 알림 표시에 실패했습니다: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -124,6 +167,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: Text('알림'),
         actions: [
           IconButton(
+            icon: Icon(Icons.notifications_active),
+            onPressed: checkNewNotifications,
+            tooltip: '새 알림 확인',
+          ),
+          IconButton(
+            icon: Icon(Icons.bug_report),
+            onPressed: showTestNotification,
+            tooltip: '테스트 알림',
+          ),
+          IconButton(
             icon: Icon(Icons.done_all),
             onPressed: markAllAsRead,
             tooltip: '모두 읽음 처리',
@@ -150,6 +203,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                     SizedBox(height: 16),
                     Text('알림이 없습니다.', style: TextStyle(color: Colors.grey)),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: checkNewNotifications,
+                      child: Text('새 알림 확인'),
+                    ),
                   ],
                 ),
               )

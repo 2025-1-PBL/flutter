@@ -56,6 +56,10 @@
 		<key>NSLocationAlwaysUsageDescription</key>
 		<string>지도에서 현재 위치를 표시하고 주변 일정을 찾기 위해 위치 정보가 필요합니다.</string>
 		
+		<!-- 알림 권한 설정 -->
+		<key>NSUserNotificationUsageDescription</key>
+		<string>새로운 알림을 받기 위해 알림 권한이 필요합니다.</string>
+		
 		<!-- OAuth2 딥링크 설정 -->
 		<key>CFBundleURLTypes</key>
 		<array>

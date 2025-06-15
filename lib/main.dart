@@ -6,16 +6,50 @@ import 'splash.dart';
 import 'home/home_screen.dart';
 import 'api/auth_service.dart';
 import 'api/social_login_service.dart';
-import 'notification/setupFCM.dart';
-import 'notification/fcmHandler.dart';
+// import 'notification/setupFCM.dart';
+// import 'notification/fcmHandler.dart';
 import 'notification/notificationScreen.dart';
+import 'notification/notificationService.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FCM 및 알림 기능 초기화
-  await setupFCM();
-  await setupNotifications();
+  // FCM 및 알림 기능 초기화 (Firebase 설정 완료 후 활성화)
+  //
+  // 알림 기능을 활성화하려면:
+  // 1. 아래 주석을 해제하고
+  // 2. Firebase 프로젝트 설정이 완료되었는지 확인
+  // 3. google-services.json (Android) 및 GoogleService-Info.plist (iOS) 파일이 올바른 위치에 있는지 확인
+  //
+  // await setupFCM();
+  // await setupNotifications();
+  //
+  // 또는 enableNotifications() 함수를 사용:
+  // import 'notification/setupFCM.dart';
+  // await enableNotifications();
+
+  // 로컬 알림 서비스 초기화 및 시작
+  try {
+    final localNotificationService = LocalNotificationService();
+    await localNotificationService.initialize();
+
+    // 로그인 상태 확인 후 알림 폴링 시작
+    final authService = AuthService();
+    try {
+      final isLoggedIn = await authService.isLoggedIn();
+      if (isLoggedIn) {
+        localNotificationService.startPolling(
+          interval: const Duration(minutes: 3),
+        );
+        print('알림 폴링 시작됨');
+      }
+    } catch (e) {
+      print('로그인 상태 확인 실패: $e');
+    }
+  } catch (e) {
+    print('로컬 알림 서비스 초기화 실패: $e');
+    // 알림 서비스 초기화 실패해도 앱은 계속 실행
+  }
 
   runApp(
     ChangeNotifierProvider(
@@ -55,6 +89,8 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   final AuthService _authService = AuthService();
   final AppLinks _appLinks = AppLinks();
+  final LocalNotificationService _localNotificationService =
+      LocalNotificationService();
   bool _isLoading = true;
   bool _isLoggedIn = false;
 
@@ -63,6 +99,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
     super.initState();
     _checkLoginStatus();
     _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _localNotificationService.stopPolling();
+    super.dispose();
   }
 
   void _initDeepLinks() {
@@ -101,6 +143,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _isLoggedIn = isLoggedIn;
           _isLoading = false;
         });
+
+        // 로그인 상태에 따라 알림 폴링 시작/중지
+        if (isLoggedIn) {
+          _localNotificationService.startPolling(
+            interval: const Duration(minutes: 3),
+          );
+          print('로그인됨 - 알림 폴링 시작');
+        } else {
+          _localNotificationService.stopPolling();
+          print('로그아웃됨 - 알림 폴링 중지');
+        }
       }
     } catch (e) {
       print('로그인 상태 확인 실패: $e');
@@ -109,6 +162,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _isLoggedIn = false;
           _isLoading = false;
         });
+        _localNotificationService.stopPolling();
       }
     }
   }
