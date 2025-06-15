@@ -26,6 +26,11 @@ class _MemoWritePageState extends State<MemoWritePage> {
   double? latitude;
   double? longitude;
 
+  DateTime? selectedDate;
+  TimeOfDay? selectedTime;
+  bool _dateEnabled = true;
+  bool _timeEnabled = true;
+
   bool get isEditMode => widget.initialData != null;
 
   final List<Color> availableColors = [
@@ -57,7 +62,6 @@ class _MemoWritePageState extends State<MemoWritePage> {
     latitude = _parseDouble(widget.initialData?['latitude']);
     longitude = _parseDouble(widget.initialData?['longitude']);
 
-    // 로그인 상태 확인
     _checkLoginStatus();
   }
 
@@ -76,20 +80,13 @@ class _MemoWritePageState extends State<MemoWritePage> {
 
   Color stringToColor(String colorStr) {
     switch (colorStr) {
-      case 'red':
-        return Colors.red;
-      case 'orange':
-        return Colors.orange;
-      case 'yellow':
-        return Colors.yellow;
-      case 'green':
-        return Colors.green;
-      case 'blue':
-        return Colors.blue;
-      case 'purple':
-        return Colors.purple;
-      default:
-        return Colors.blue;
+      case 'red': return Colors.red;
+      case 'orange': return Colors.orange;
+      case 'yellow': return Colors.yellow;
+      case 'green': return Colors.green;
+      case 'blue': return Colors.blue;
+      case 'purple': return Colors.purple;
+      default: return Colors.blue;
     }
   }
 
@@ -101,6 +98,127 @@ class _MemoWritePageState extends State<MemoWritePage> {
     if (color == Colors.blue) return 'blue';
     if (color == Colors.purple) return 'purple';
     return 'blue';
+  }
+
+  String get selectedDateText {
+    if (selectedDate == null) return '오늘';
+    return '${selectedDate!.year}년 ${selectedDate!.month}월 ${selectedDate!.day}일';
+  }
+
+  String get selectedTimeText {
+    if (selectedTime == null) return '오후 3:00';
+    final hour = selectedTime!.hourOfPeriod;
+    final minute = selectedTime!.minute.toString().padLeft(2, '0');
+    final period = selectedTime!.period == DayPeriod.am ? '오전' : '오후';
+    return '$period $hour:$minute';
+  }
+// 여기다
+  Future<void> _pickDate(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 1),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFFFA724), // 노란색
+              onPrimary: Colors.white, // 선택된 날짜 글씨 색
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => selectedDate = picked);
+    }
+  }
+
+  Future<void> _pickTime(BuildContext context) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime ?? const TimeOfDay(hour: 15, minute: 0),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              dialogBackgroundColor: Colors.white,
+              colorScheme: const ColorScheme.light(
+                primary: Color(0xFFFFA724),
+                onPrimary: Colors.black,
+                onSurface: Colors.black,
+              ),
+              textTheme: const TextTheme(
+                bodyMedium: TextStyle(color: Colors.black),
+                labelLarge: TextStyle(color: Colors.black),
+                titleLarge: TextStyle(color: Colors.black),
+              ),
+              timePickerTheme: TimePickerThemeData(
+                dialHandColor: Color(0xFFFFA724),
+                dialBackgroundColor: Colors.white,
+                entryModeIconColor: Color(0xFFFFA724),
+                dialTextColor: MaterialStateColor.resolveWith((states) => Colors.black),
+                hourMinuteTextColor: Colors.black,
+                hourMinuteColor: Colors.transparent,
+                dayPeriodTextColor: MaterialStateColor.resolveWith((states) => Colors.black),
+                dayPeriodColor: MaterialStateColor.resolveWith((states) {
+                  return states.contains(MaterialState.selected)
+                      ? Color(0xFFFFA724) // 선택된 AM/PM 배경
+                      : Colors.transparent; // 비선택 상태는 투명
+                }),
+              ),
+            ),
+            child: child!,
+          );
+        }
+    );
+    if (picked != null) setState(() => selectedTime = picked);
+  }
+
+  Widget _buildBoxWithoutSwitch({
+    required IconData icon,
+    required String label,
+    required String valueText,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Color(0xFFFFA724)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontSize: 14, color: Colors.black)),
+                  Text(valueText, style: const TextStyle(fontSize: 14, color: Colors.black)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _selectLocationFromMap() async {
@@ -161,6 +279,12 @@ class _MemoWritePageState extends State<MemoWritePage> {
         'latitude': latitude,
         'longitude': longitude,
         'isShared': false, // 기본적으로 개인 일정
+        'date': _dateEnabled && selectedDate != null
+            ? selectedDate!.toIso8601String()
+            : null,
+        'time': _timeEnabled && selectedTime != null
+            ? '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}'
+            : null,
       };
 
       if (isEditMode) {
@@ -282,6 +406,26 @@ class _MemoWritePageState extends State<MemoWritePage> {
                   child: Column(
                     children: [
                       const SizedBox(height: 30),
+
+                      _buildBoxWithoutSwitch(
+                        icon: Icons.calendar_today,
+                        label: '날짜',
+                        valueText: selectedDateText,
+                        onTap: () => _pickDate(context),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      _buildBoxWithoutSwitch(
+                        icon: Icons.access_time,
+                        label: '시간',
+                        valueText: selectedTimeText,
+                        onTap: () => _pickTime(context),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ✅ 장소 입력 박스
                       Container(
                         height: 60,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -308,9 +452,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
                                 style: const TextStyle(fontSize: 16),
                                 decoration: const InputDecoration(
                                   isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 0,
-                                  ),
+                                  contentPadding: EdgeInsets.symmetric(vertical: 0),
                                   border: InputBorder.none,
                                   hintText: '장소를 선택하세요.',
                                 ),
@@ -319,23 +461,18 @@ class _MemoWritePageState extends State<MemoWritePage> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 2),
                               child: IconButton(
-                                icon: const Icon(
-                                  Icons.map,
-                                  color: Color(0xFFFFA724),
-                                ),
-                                onPressed:
-                                    _isLoading ? null : _selectLocationFromMap,
+                                icon: const Icon(Icons.map, color: Color(0xFFFFA724)),
+                                onPressed: _isLoading ? null : _selectLocationFromMap,
                               ),
                             ),
                             GestureDetector(
-                              onTap:
-                                  _isLoading
-                                      ? null
-                                      : () {
-                                        setState(() {
-                                          _showColorPicker = !_showColorPicker;
-                                        });
-                                      },
+                              onTap: _isLoading
+                                  ? null
+                                  : () {
+                                setState(() {
+                                  _showColorPicker = !_showColorPicker;
+                                });
+                              },
                               child: CircleAvatar(
                                 backgroundColor: _selectedColor,
                                 radius: 10,
@@ -344,6 +481,8 @@ class _MemoWritePageState extends State<MemoWritePage> {
                           ],
                         ),
                       ),
+
+                      // 🎨 색상 선택 박스
                       if (_showColorPicker)
                         Container(
                           margin: const EdgeInsets.symmetric(vertical: 12),
@@ -360,27 +499,27 @@ class _MemoWritePageState extends State<MemoWritePage> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children:
-                                availableColors.map((color) {
-                                  return GestureDetector(
-                                    onTap:
-                                        _isLoading
-                                            ? null
-                                            : () {
-                                              setState(() {
-                                                _selectedColor = color;
-                                                _showColorPicker = false;
-                                              });
-                                            },
-                                    child: CircleAvatar(
-                                      backgroundColor: color,
-                                      radius: 12,
-                                    ),
-                                  );
-                                }).toList(),
+                            children: availableColors.map((color) {
+                              return GestureDetector(
+                                onTap: _isLoading
+                                    ? null
+                                    : () {
+                                  setState(() {
+                                    _selectedColor = color;
+                                    _showColorPicker = false;
+                                  });
+                                },
+                                child: CircleAvatar(
+                                  backgroundColor: color,
+                                  radius: 12,
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ),
                       const SizedBox(height: 12),
+
+                      // ✅ 메모 입력 박스
                       Container(
                         height: 60,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -397,10 +536,7 @@ class _MemoWritePageState extends State<MemoWritePage> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.note_outlined,
-                              color: Color(0xFFFFA724),
-                            ),
+                            const Icon(Icons.note_outlined, color: Color(0xFFFFA724)),
                             const SizedBox(width: 10),
                             Expanded(
                               child: TextField(
