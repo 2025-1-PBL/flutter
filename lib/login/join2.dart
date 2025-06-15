@@ -476,26 +476,46 @@ class _Join2ScreenState extends State<Join2Screen> {
   }
 
   Widget _buildCheckboxTile(
-    String label, {
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-  }) {
+      String label, {
+        required bool value,
+        required ValueChanged<bool?> onChanged,
+      }) {
     return Padding(
       padding: const EdgeInsets.only(left: 0),
-      child: SizedBox(
-        height: 30,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Checkbox(
-              value: value,
-              onChanged: onChanged,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          checkboxTheme: CheckboxThemeData(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4), // ✅ 모서리 둥글기 설정
             ),
-            const SizedBox(width: 1),
-            Text(label, style: const TextStyle(fontSize: 14)),
-          ],
+            side: const BorderSide(
+              color: Color(0xFFBDBDBD), // ✅ 체크 안 됐을 때 테두리 색
+              width: 1.5,
+            ),
+            fillColor: MaterialStateProperty.resolveWith((states) {
+              if (states.contains(MaterialState.selected)) {
+                return const Color(0xFFFFA724); // ✅ 체크 시 주황색
+              }
+              return Colors.transparent; // ✅ 체크 안 됐을 때 내부는 투명
+            }),
+            checkColor: MaterialStateProperty.all(Colors.white), // 체크 표시 색
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        child: SizedBox(
+          height: 30,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: value,
+                onChanged: onChanged,
+              ),
+              const SizedBox(width: 1),
+              Text(label, style: const TextStyle(fontSize: 14)),
+            ],
+          ),
         ),
       ),
     );
