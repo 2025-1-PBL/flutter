@@ -15,6 +15,7 @@ class CustomTopBar extends StatelessWidget {
   // ✅ 추가된 파라미터
   final String? rightText;
   final VoidCallback? onRightPressed;
+  final List<Widget>? actions;
 
   const CustomTopBar({
     super.key,
@@ -29,6 +30,7 @@ class CustomTopBar extends StatelessWidget {
     this.actionIconColor,
     this.rightText,
     this.onRightPressed,
+    this.actions,
   });
 
   @override
@@ -60,41 +62,45 @@ class CustomTopBar extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: rightText != null && onRightPressed != null
-                  ? TextButton(
-                onPressed: onRightPressed,
-                child: Text(
-                  rightText!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFFFFA724),
-                  ),
-                ),
-              )
-                  : actionText != null
-                  ? TextButton(
-                onPressed: onAction,
-                child: Text(
-                  actionText!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: onAction != null
-                        ? const Color(0xFFFFA724)
-                        : Colors.grey,
-                  ),
-                ),
-              )
-                  : actionIcon != null
-                  ? IconButton(
-                icon: Icon(
-                  actionIcon,
-                  color: actionIconColor ?? Colors.black,
-                ),
-                onPressed: onAction,
-              )
-                  : const SizedBox(width: 40),
+              child:
+                  actions != null
+                      ? Row(mainAxisSize: MainAxisSize.min, children: actions!)
+                      : rightText != null && onRightPressed != null
+                      ? TextButton(
+                        onPressed: onRightPressed,
+                        child: Text(
+                          rightText!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFFA724),
+                          ),
+                        ),
+                      )
+                      : actionText != null
+                      ? TextButton(
+                        onPressed: onAction,
+                        child: Text(
+                          actionText!,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                onAction != null
+                                    ? const Color(0xFFFFA724)
+                                    : Colors.grey,
+                          ),
+                        ),
+                      )
+                      : actionIcon != null
+                      ? IconButton(
+                        icon: Icon(
+                          actionIcon,
+                          color: actionIconColor ?? Colors.black,
+                        ),
+                        onPressed: onAction,
+                      )
+                      : const SizedBox(width: 40),
             ),
           ],
         ),

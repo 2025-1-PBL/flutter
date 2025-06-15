@@ -9,7 +9,7 @@ PODS:
   - firebase_core (2.32.0):
     - Firebase/CoreOnly (= 10.25.0)
     - Flutter
-  - firebase_messaging (14.9.4):
+  - firebase_messaging (14.7.10):
     - Firebase/Messaging (= 10.25.0)
     - firebase_core
     - Flutter
@@ -45,7 +45,6 @@ PODS:
     - Flutter
   - fluttertoast (0.0.2):
     - Flutter
-    - Toast
   - geolocator_apple (1.2.0):
     - Flutter
     - FlutterMacOS
@@ -97,7 +96,6 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - Toast (4.1.1)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -131,7 +129,6 @@ SPEC REPOS:
     - NMapsGeometry
     - NMapsMap
     - PromisesObjC
-    - Toast
 
 EXTERNAL SOURCES:
   app_links:
@@ -169,7 +166,7 @@ SPEC CHECKSUMS:
   app_links: c5161ac5ab5383ad046884568b4b91cb52df5d91
   Firebase: 0312a2352584f782ea56f66d91606891d4607f06
   firebase_core: 3b49a055ff54114cae400581c13671fe53936c36
-  firebase_messaging: 30fa3ec8cd0dc8a860b7817548911b97345a0875
+  firebase_messaging: 394589dcda43e42ec9807558a409a975e285c45b
   FirebaseCore: 7ec4d0484817f12c3373955bc87762d96842d483
   FirebaseCoreInternal: df84dd300b561c27d5571684f389bf60b0a5c934
   FirebaseInstallations: 913cf60d0400ebd5d6b63a28b290372ab44590dd
@@ -179,7 +176,7 @@ SPEC CHECKSUMS:
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
   flutter_naver_map: dafe40026d3b4739fdff4ae32953021b1b52b0c2
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
-  fluttertoast: 76fea30fcf04176325f6864c87306927bd7d2038
+  fluttertoast: 2c67e14dce98bbdb200df9e1acf610d7a6264ea1
   geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
   GoogleDataTransport: 6c09b596d841063d76d4288cc2d2f42cc36e1e2a
   GoogleUtilities: ea963c370a38a8069cc5f7ba4ca849a60b6d7d15
@@ -191,7 +188,6 @@ SPEC CHECKSUMS:
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
-  Toast: 1f5ea13423a1e6674c4abdac5be53587ae481c4e
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
 
 PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5

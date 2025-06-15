@@ -15,6 +15,35 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final ArticleService _articleService = ArticleService();
   bool _isLiked = false;
   bool _isLoading = false;
+  late Map<String, dynamic> _post;
+
+  @override
+  void initState() {
+    super.initState();
+    _post = Map<String, dynamic>.from(widget.post);
+    _loadArticleDetails();
+  }
+
+  Future<void> _loadArticleDetails() async {
+    try {
+      final articleId = _post['id'] as int;
+      final articleDetails = await _articleService.getArticleById(articleId);
+      setState(() {
+        _post = articleDetails;
+        _isLiked = articleDetails['isLiked'] ?? false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('게시글을 불러오는데 실패했습니다: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +92,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             Icons.remove_red_eye,
                             color: Color(0xFFFFA724),
                           ),
-                          const Text('0'),
+                          Text('${_post['views'] ?? 0}'),
                           GestureDetector(
                             onTap: _isLoading ? null : _toggleLike,
                             child: Icon(
@@ -71,7 +100,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               color: const Color(0xFFFFA724),
                             ),
                           ),
-                          Text('${widget.post['likes'] ?? 0}'),
+                          Text('${_post['likes'] ?? 0}'),
                           const Icon(Icons.bookmark, color: Color(0xFFFFA724)),
                           const Text('0'),
                         ],
@@ -102,7 +131,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            widget.post['title'],
+                            _post['title'],
                             style: const TextStyle(
                               fontSize: 16,
                               color: Colors.black,
@@ -121,7 +150,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            widget.post['location'] ?? '위치 정보 없음',
+                            _post['location'] ?? '위치 정보 없음',
                             style: const TextStyle(
                               fontSize: 16,
                               color: Color(0xFFBDBDBD),
@@ -135,7 +164,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            widget.post['content'] ?? '내용이 없습니다.',
+                            _post['content'] ?? '내용이 없습니다.',
                             style: const TextStyle(
                               fontSize: 16,
                               color: Colors.black,
@@ -149,14 +178,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '작성자: ${widget.post['author'] ?? '익명'}',
+                                '작성자: ${_post['author'] ?? '익명'}',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,
                                 ),
                               ),
                               Text(
-                                widget.post['date'] ?? '',
+                                _post['date'] ?? '',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,
@@ -183,7 +212,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         _isLoading = true;
       });
 
-      final articleId = widget.post['id'] as int;
+      final articleId = _post['id'] as int;
 
       if (_isLiked) {
         // 좋아요 취소
@@ -195,8 +224,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
       setState(() {
         _isLiked = !_isLiked;
-        widget.post['likes'] =
-            (_isLiked ? 1 : -1) + (widget.post['likes'] ?? 0);
+        _post['likes'] = (_isLiked ? 1 : -1) + (_post['likes'] ?? 0);
       });
 
       if (mounted) {

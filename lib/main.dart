@@ -6,27 +6,22 @@ import 'splash.dart';
 import 'home/home_screen.dart';
 import 'api/auth_service.dart';
 import 'api/social_login_service.dart';
-// import 'notification/setupFCM.dart';
-// import 'notification/fcmHandler.dart';
-import 'notification/notificationScreen.dart';
+import 'notification/setupFCM.dart';
+import 'notification/fcmHandler.dart';
 import 'notification/notificationService.dart';
+import 'notification/websocketService.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FCM 및 알림 기능 초기화 (Firebase 설정 완료 후 활성화)
-  //
-  // 알림 기능을 활성화하려면:
-  // 1. 아래 주석을 해제하고
-  // 2. Firebase 프로젝트 설정이 완료되었는지 확인
-  // 3. google-services.json (Android) 및 GoogleService-Info.plist (iOS) 파일이 올바른 위치에 있는지 확인
-  //
-  // await setupFCM();
-  // await setupNotifications();
-  //
-  // 또는 enableNotifications() 함수를 사용:
-  // import 'notification/setupFCM.dart';
-  // await enableNotifications();
+  // FCM 및 알림 기능 초기화
+  try {
+    await setupFCM();
+    await setupNotifications();
+    print('Firebase 알림 시스템 초기화 성공');
+  } catch (e) {
+    print('Firebase 알림 시스템 초기화 실패: $e');
+  }
 
   // 로컬 알림 서비스 초기화 및 시작
   try {
@@ -72,7 +67,6 @@ class MapMoaApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        '/notifications': (context) => NotificationsScreen(),
       },
     );
   }

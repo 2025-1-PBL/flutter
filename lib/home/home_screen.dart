@@ -9,6 +9,9 @@ import '../map/map_page.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'notification_page.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showSignupComplete;
@@ -36,6 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isMapInitialized = false;
   NaverMapController? _mapController;
   NLatLng? _currentLocation;
+
+  // 알림 관련 상태 변수
+  int _unreadNotificationCount = 0;
 
   @override
   void initState() {
@@ -107,6 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
         print('게시글 로딩 실패: $e');
         // 게시글 로딩 실패해도 일정은 계속 표시
       }
+
+      // 읽지 않은 알림 개수 가져오기
+      await _loadUnreadNotificationCount();
 
       setState(() {
         allSchedules = scheduleMaps.reversed.toList();
@@ -271,6 +280,32 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // 읽지 않은 알림 개수 가져오기
+  Future<void> _loadUnreadNotificationCount() async {
+    try {
+      final dio = Dio();
+      final storage = FlutterSecureStorage();
+      final authToken = await storage.read(key: 'token');
+
+      if (authToken != null) {
+        dio.options.headers['Authorization'] = 'Bearer $authToken';
+
+        final response = await dio.get(
+          'http://ocb.iptime.org:8080/api/notifications/count',
+        );
+
+        if (response.statusCode == 200) {
+          setState(() {
+            _unreadNotificationCount = response.data['count'] ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      print('알림 개수 로딩 실패: $e');
+      // 실패해도 앱은 계속 실행
+    }
+  }
+
   @override
   void dispose() {
     _mapController?.dispose();
@@ -320,9 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () async {
         await Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const MyInfoEditScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const MyInfoEditScreen()),
         );
         if (mounted) {
           await _loadData();
@@ -338,14 +371,10 @@ class _HomeScreenState extends State<HomeScreen> {
               CircleAvatar(
                 radius: 42,
                 backgroundColor: const Color(0xFFE0E0E0),
-                child: const Icon(
-                  Icons.person,
-                  size: 40,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.person, size: 40, color: Colors.white),
               ),
 
-              // 알림 뱃지 버튼
+              // 알림 뱃지 버튼 (항상 표시)
               Positioned(
                 top: -2,
                 right: -2,
@@ -353,7 +382,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const NotificationPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationPage(),
+                      ),
                     );
                   },
                   child: Container(
@@ -361,13 +392,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFFFFCC00),
+                      color:
+                          _unreadNotificationCount > 0
+                              ? const Color(0xFFFFCC00)
+                              : Colors.grey,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        '3', // 알림 수 (이후 상태 변수로 변경 가능)
-                        style: TextStyle(
+                        '$_unreadNotificationCount',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -643,7 +677,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 size: 18,
                               ),
                               const SizedBox(width: 5),
-                              Flexible( // ✅ 이 부분 추가
+                              Flexible(
+                                // ✅ 이 부분 추가
                                 child: Text(
                                   posts[index]['location'] ?? '',
                                   style: const TextStyle(fontSize: 14),

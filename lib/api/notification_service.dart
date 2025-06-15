@@ -36,8 +36,18 @@ class NotificationService {
         '${ApiConfig.notificationUrl}/unread',
         options: Options(headers: headers),
       );
+
+      print('알림 응답 데이터: ${response.data}'); // 응답 데이터 확인
+      print('알림 응답 타입: ${response.data.runtimeType}'); // 응답 데이터 타입 확인
+
+      if (response.data == null) {
+        print('알림 데이터가 null입니다.');
+        return [];
+      }
+
       return response.data as List<dynamic>;
     } catch (e) {
+      print('알림 목록 가져오기 실패: $e');
       throw Exception('읽지 않은 알림 목록을 불러오는데 실패했습니다: $e');
     }
   }
