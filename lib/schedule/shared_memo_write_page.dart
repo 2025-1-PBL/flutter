@@ -62,6 +62,20 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
     latitude = _parseDouble(widget.initialData?['latitude']);
     longitude = _parseDouble(widget.initialData?['longitude']);
 
+    // 초기 날짜와 시간 설정
+    if (widget.initialData != null) {
+      if (widget.initialData!['date'] != null) {
+        selectedDate = DateTime.parse(widget.initialData!['date']);
+      }
+      if (widget.initialData!['time'] != null) {
+        final timeParts = widget.initialData!['time'].split(':');
+        selectedTime = TimeOfDay(
+          hour: int.parse(timeParts[0]),
+          minute: int.parse(timeParts[1]),
+        );
+      }
+    }
+
     // 로그인 상태 확인
     _checkLoginStatus();
   }
@@ -137,6 +151,52 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
     }
   }
 
+  Future<void> _pickTime(BuildContext context) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime ?? const TimeOfDay(hour: 15, minute: 0),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            dialogBackgroundColor: Colors.white,
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFFFA724),
+              onPrimary: Colors.black,
+              onSurface: Colors.black,
+            ),
+            textTheme: const TextTheme(
+              bodyMedium: TextStyle(color: Colors.black),
+              labelLarge: TextStyle(color: Colors.black),
+              titleLarge: TextStyle(color: Colors.black),
+            ),
+            timePickerTheme: TimePickerThemeData(
+              dialHandColor: Color(0xFFFFA724),
+              dialBackgroundColor: Colors.white,
+              entryModeIconColor: Color(0xFFFFA724),
+              dialTextColor: MaterialStateColor.resolveWith(
+                (states) => Colors.black,
+              ),
+              hourMinuteTextColor: Colors.black,
+              hourMinuteColor: Colors.transparent,
+              dayPeriodTextColor: MaterialStateColor.resolveWith(
+                (states) => Colors.black,
+              ),
+              dayPeriodColor: MaterialStateColor.resolveWith((states) {
+                return states.contains(MaterialState.selected)
+                    ? Color(0xFFFFA724)
+                    : Colors.transparent;
+              }),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => selectedTime = picked);
+    }
+  }
+
   Widget _buildBoxWithoutSwitch({
     required IconData icon,
     required String label,
@@ -168,8 +228,14 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 14, color: Colors.black)),
-                  Text(valueText, style: const TextStyle(fontSize: 14, color: Colors.black)),
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 14, color: Colors.black),
+                  ),
+                  Text(
+                    valueText,
+                    style: const TextStyle(fontSize: 14, color: Colors.black),
+                  ),
                 ],
               ),
             ),
@@ -177,48 +243,6 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
         ),
       ),
     );
-  }
-
-  Future<void> _pickTime(BuildContext context) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: selectedTime ?? const TimeOfDay(hour: 15, minute: 0),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            dialogBackgroundColor: Colors.white,
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFFFA724),
-              onPrimary: Colors.black,
-              onSurface: Colors.black,
-            ),
-            textTheme: const TextTheme(
-              bodyMedium: TextStyle(color: Colors.black),
-              labelLarge: TextStyle(color: Colors.black),
-              titleLarge: TextStyle(color: Colors.black),
-            ),
-            timePickerTheme: TimePickerThemeData(
-              dialHandColor: Color(0xFFFFA724),
-              dialBackgroundColor: Colors.white,
-              entryModeIconColor: Color(0xFFFFA724),
-              dialTextColor: MaterialStateColor.resolveWith((states) => Colors.black),
-              hourMinuteTextColor: Colors.black,
-              hourMinuteColor: Colors.transparent,
-              dayPeriodTextColor: MaterialStateColor.resolveWith((states) => Colors.black),
-              dayPeriodColor: MaterialStateColor.resolveWith((states) {
-                return states.contains(MaterialState.selected)
-                    ? Color(0xFFFFA724)
-                    : Colors.transparent;
-              }),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => selectedTime = picked);
-    }
   }
 
   String colorToString(Color color) {
@@ -268,7 +292,6 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
       // 토큰 만료 확인
       final needsReLogin = await _authService.needsReLogin();
       if (needsReLogin) {
-        // 로그인 페이지로 리다이렉트
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/login');
         }
@@ -289,12 +312,14 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
         'latitude': latitude,
         'longitude': longitude,
         'isShared': true, // 공유 일정으로 설정
-        'date': _dateEnabled && selectedDate != null
-            ? selectedDate!.toIso8601String()
-            : null,
-        'time': _timeEnabled && selectedTime != null
-            ? '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}'
-            : null,
+        'date':
+            _dateEnabled && selectedDate != null
+                ? selectedDate!.toIso8601String()
+                : null,
+        'time':
+            _timeEnabled && selectedTime != null
+                ? '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}'
+                : null,
       };
 
       if (isEditMode) {
