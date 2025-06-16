@@ -27,11 +27,20 @@ class _SharedScheduleSheetState extends State<SharedScheduleSheet> {
   List<Map<String, dynamic>> _sharedSchedules = [];
   bool _isLoading = true;
   String _errorMessage = '';
+  bool _localShowMarkers = false;
 
   @override
   void initState() {
     super.initState();
+    _localShowMarkers = widget.showMarkers;
     _loadSharedSchedules();
+  }
+
+  void _handleToggleMarkers() {
+    setState(() {
+      _localShowMarkers = !_localShowMarkers;
+    });
+    widget.onToggleMarkers(_localShowMarkers);
   }
 
   Future<void> _loadSharedSchedules() async {
@@ -124,10 +133,13 @@ class _SharedScheduleSheetState extends State<SharedScheduleSheet> {
                     const SizedBox(width: 10),
                     Transform.scale(
                       scale: 0.9,
-                      child: Switch(
-                        value: widget.showMarkers,
-                        onChanged: widget.onToggleMarkers,
-                        activeColor: Color(0xFFFFA724),
+                      child: GestureDetector(
+                        onTap: _handleToggleMarkers,
+                        child: Switch(
+                          value: _localShowMarkers,
+                          onChanged: (value) => _handleToggleMarkers(),
+                          activeColor: const Color(0xFFFFA724),
+                        ),
                       ),
                     ),
                   ],

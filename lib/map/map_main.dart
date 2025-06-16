@@ -24,8 +24,8 @@ class _MapMainPageState extends State<MapMainPage> {
 
   bool _isInitialized = false;
   bool _isMenuOpen = false;
-  bool _showPersonalMarkers = false;
-  bool _showSharedMarkers = false;
+  bool _showPersonalMarkers = true;
+  bool _showSharedMarkers = true;
   bool _showEvents = false;
 
   NaverMapController? _mapController;
