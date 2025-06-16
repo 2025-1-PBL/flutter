@@ -26,10 +26,7 @@ class _SplashScreenState extends State<SplashScreen>
     _animation = Tween<Offset>(
       begin: Offset.zero,
       end: const Offset(0.2, 0.2), // 느리게 오른쪽 아래로 이동
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.linear,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
 
     Timer(const Duration(seconds: 10), () {
       Navigator.pushReplacement(
@@ -61,11 +58,7 @@ class _SplashScreenState extends State<SplashScreen>
           children: List.generate(1000, (index) {
             return Opacity(
               opacity: 0.2,
-              child: Image.asset(
-                'assets/logo.png',
-                width: 100,
-                height: 100,
-              ),
+              child: Image.asset('assets/logo.png', width: 100, height: 100),
             );
           }),
         ),
@@ -81,11 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
         children: [
           _buildHugePatternGrid(context),
           Center(
-            child: Image.asset(
-              'assets/logo.png',
-              width: 180,
-              height: 180,
-            ),
+            child: Image.asset('assets/logo.png', width: 180, height: 180),
           ),
         ],
       ),
