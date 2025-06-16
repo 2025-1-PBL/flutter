@@ -39,8 +39,10 @@ class EventListSheet extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const Icon(Icons.event, size: 24, color: Colors.black),
+                    const SizedBox(width: 8),
                     const Text(
-                      '🛍️  이벤트 목록',
+                      '이벤트 목록',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 10),

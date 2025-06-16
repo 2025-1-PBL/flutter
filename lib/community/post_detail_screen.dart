@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../api/article_service.dart';
+import 'write_post.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -15,6 +16,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final ArticleService _articleService = ArticleService();
   bool _isLiked = false;
   bool _isLoading = false;
+  String? _popupSelected;
   late Map<String, dynamic> _post;
 
   @override
@@ -63,6 +65,38 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 backgroundColor: Colors.transparent,
                 titleColor: Colors.white,
                 backIconColor: Colors.white,
+                actionWidget: PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: Colors.white,
+                  onSelected: (value) {
+                    if (value == 'delete_selected') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('삭제 모드 활성화')),
+                      );
+                    } else if (value == 'edit_post') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WritePostScreen(),
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder:
+                      (context) => const [
+                        PopupMenuItem(
+                          value: 'delete_selected',
+                          child: Center(child: Text('삭제하기')),
+                        ),
+                        PopupMenuItem(
+                          value: 'edit_post', // ✅ 여기 수정
+                          child: Center(child: Text('수정하기')), // ✅ 여기 수정
+                        ),
+                      ],
+                ),
               ),
               Expanded(
                 child: ListView(

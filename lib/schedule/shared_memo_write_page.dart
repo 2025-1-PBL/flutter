@@ -26,6 +26,11 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
   double? latitude;
   double? longitude;
 
+  DateTime? selectedDate;
+  TimeOfDay? selectedTime;
+  bool _dateEnabled = true;
+  bool _timeEnabled = true;
+
   bool get isEditMode => widget.initialData != null;
 
   final List<Color> availableColors = [
@@ -90,6 +95,129 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
         return Colors.purple;
       default:
         return Colors.blue;
+    }
+  }
+
+  String get selectedDateText {
+    if (selectedDate == null) return '오늘';
+    return '${selectedDate!.year}년 ${selectedDate!.month}월 ${selectedDate!.day}일';
+  }
+
+  String get selectedTimeText {
+    if (selectedTime == null) return '오후 3:00';
+    final hour = selectedTime!.hourOfPeriod;
+    final minute = selectedTime!.minute.toString().padLeft(2, '0');
+    final period = selectedTime!.period == DayPeriod.am ? '오전' : '오후';
+    return '$period $hour:$minute';
+  }
+
+  Future<void> _pickDate(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 1),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFFFA724),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => selectedDate = picked);
+    }
+  }
+
+  Widget _buildBoxWithoutSwitch({
+    required IconData icon,
+    required String label,
+    required String valueText,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFFFA724)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontSize: 14, color: Colors.black)),
+                  Text(valueText, style: const TextStyle(fontSize: 14, color: Colors.black)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickTime(BuildContext context) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime ?? const TimeOfDay(hour: 15, minute: 0),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            dialogBackgroundColor: Colors.white,
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFFFA724),
+              onPrimary: Colors.black,
+              onSurface: Colors.black,
+            ),
+            textTheme: const TextTheme(
+              bodyMedium: TextStyle(color: Colors.black),
+              labelLarge: TextStyle(color: Colors.black),
+              titleLarge: TextStyle(color: Colors.black),
+            ),
+            timePickerTheme: TimePickerThemeData(
+              dialHandColor: Color(0xFFFFA724),
+              dialBackgroundColor: Colors.white,
+              entryModeIconColor: Color(0xFFFFA724),
+              dialTextColor: MaterialStateColor.resolveWith((states) => Colors.black),
+              hourMinuteTextColor: Colors.black,
+              hourMinuteColor: Colors.transparent,
+              dayPeriodTextColor: MaterialStateColor.resolveWith((states) => Colors.black),
+              dayPeriodColor: MaterialStateColor.resolveWith((states) {
+                return states.contains(MaterialState.selected)
+                    ? Color(0xFFFFA724)
+                    : Colors.transparent;
+              }),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => selectedTime = picked);
     }
   }
 
@@ -161,6 +289,12 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
         'latitude': latitude,
         'longitude': longitude,
         'isShared': true, // 공유 일정으로 설정
+        'date': _dateEnabled && selectedDate != null
+            ? selectedDate!.toIso8601String()
+            : null,
+        'time': _timeEnabled && selectedTime != null
+            ? '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}'
+            : null,
       };
 
       if (isEditMode) {
@@ -282,6 +416,7 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
                   child: Column(
                     children: [
                       const SizedBox(height: 30),
+
                       // 공유 일정 안내 메시지
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -312,6 +447,22 @@ class _SharedMemoWritePageState extends State<SharedMemoWritePage> {
                         ),
                       ),
                       const SizedBox(height: 20),
+
+                      _buildBoxWithoutSwitch(
+                        icon: Icons.calendar_today,
+                        label: '날짜',
+                        valueText: selectedDateText,
+                        onTap: () => _pickDate(context),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildBoxWithoutSwitch(
+                        icon: Icons.access_time,
+                        label: '시간',
+                        valueText: selectedTimeText,
+                        onTap: () => _pickTime(context),
+                      ),
+                      const SizedBox(height: 12),
+
                       Container(
                         height: 60,
                         padding: const EdgeInsets.symmetric(horizontal: 16),

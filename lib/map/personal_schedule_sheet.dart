@@ -112,7 +112,7 @@ class _PersonalScheduleSheetState extends State<PersonalScheduleSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset('assets/location.png', width: 24, height: 24),
+                    const Icon(Icons.person, size: 24, color: Colors.black),
                     const SizedBox(width: 8),
                     const Text(
                       '개인 일정',

@@ -17,6 +17,9 @@ class CustomTopBar extends StatelessWidget {
   final VoidCallback? onRightPressed;
   final List<Widget>? actions;
 
+  // ✅ 새로 추가된 커스텀 위젯 (예: PopupMenuButton)
+  final Widget? actionWidget;
+
   const CustomTopBar({
     super.key,
     required this.title,
@@ -31,6 +34,7 @@ class CustomTopBar extends StatelessWidget {
     this.rightText,
     this.onRightPressed,
     this.actions,
+    this.actionWidget,
   });
 
   @override
@@ -63,7 +67,8 @@ class CustomTopBar extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child:
-                  actions != null
+                  actionWidget ?? // 최우선: 위젯이 있으면 그걸 사용
+                  (actions != null
                       ? Row(mainAxisSize: MainAxisSize.min, children: actions!)
                       : rightText != null && onRightPressed != null
                       ? TextButton(
@@ -100,7 +105,7 @@ class CustomTopBar extends StatelessWidget {
                         ),
                         onPressed: onAction,
                       )
-                      : const SizedBox(width: 40),
+                      : const SizedBox(width: 40)),
             ),
           ],
         ),
