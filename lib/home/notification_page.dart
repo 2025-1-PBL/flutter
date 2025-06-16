@@ -60,7 +60,16 @@ class _NotificationPageState extends State<NotificationPage> {
   // 수동으로 새 알림 확인
   Future<void> checkNewNotifications() async {
     try {
+      setState(() {
+        isLoading = true;
+      });
+
+      // 위치 업데이트 및 알림 확인
       await _localNotificationService.checkNotificationsManually();
+
+      // 알림 목록 새로고침
+      await fetchNotifications();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -77,6 +86,12 @@ class _NotificationPageState extends State<NotificationPage> {
             duration: const Duration(seconds: 2),
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
       }
     }
   }

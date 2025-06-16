@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'config.dart';
+import 'auth_service.dart';
 
 class NotificationService {
   final Dio _dio = Dio();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.read(key: 'token');
@@ -130,6 +132,39 @@ class NotificationService {
       return response.data as List<dynamic>;
     } catch (e) {
       throw Exception('타입별 알림 목록을 불러오는데 실패했습니다: $e');
+    }
+  }
+
+  // 위치 업데이트 및 근처 일정 알림 요청
+  Future<void> updateLocation({
+    required double latitude,
+    required double longitude,
+    double? proximityRadius,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+
+      // 현재 사용자 정보 가져오기
+      final userData = await _authService.getCurrentUser();
+      final userId = userData['id'] as int;
+
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/location/update',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+          if (proximityRadius != null) 'proximityRadius': proximityRadius,
+        },
+        queryParameters: {'userId': userId},
+        options: Options(headers: headers),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('위치 업데이트 실패');
+      }
+    } catch (e) {
+      print('위치 업데이트 API 호출 실패: $e');
+      rethrow;
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/notification_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LocalNotificationService {
   static final LocalNotificationService _instance =
@@ -16,6 +17,42 @@ class LocalNotificationService {
   Timer? _pollingTimer;
   int _lastNotificationId = 0;
   bool _isInitialized = false;
+
+  // 위치 업데이트 및 알림 요청
+  Future<void> updateLocationAndCheckNotifications() async {
+    try {
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('위치 권한이 거부되었습니다.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('위치 권한이 영구적으로 거부되었습니다.');
+        return;
+      }
+
+      // 현재 위치 가져오기
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // 위치 업데이트 및 알림 요청
+      await _notificationService.updateLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        proximityRadius: 0.5, // 500m 반경
+      );
+
+      print('위치 업데이트 및 알림 요청 완료: ${position.latitude}, ${position.longitude}');
+    } catch (e) {
+      print('위치 업데이트 실패: $e');
+    }
+  }
 
   // 초기화
   Future<void> initialize() async {
@@ -74,8 +111,9 @@ class LocalNotificationService {
   void startPolling({Duration interval = const Duration(minutes: 5)}) {
     stopPolling(); // 기존 타이머 정리
 
-    _pollingTimer = Timer.periodic(interval, (timer) {
-      _checkForNewNotifications();
+    _pollingTimer = Timer.periodic(interval, (timer) async {
+      await updateLocationAndCheckNotifications(); // 위치 업데이트 및 알림 요청
+      await _checkForNewNotifications(); // 새로운 알림 확인
     });
 
     print('알림 폴링 시작 - ${interval.inMinutes}분 간격');
@@ -174,7 +212,8 @@ class LocalNotificationService {
 
   // 수동으로 알림 확인
   Future<void> checkNotificationsManually() async {
-    await _checkForNewNotifications();
+    await updateLocationAndCheckNotifications(); // 위치 업데이트 및 알림 요청
+    await _checkForNewNotifications(); // 새로운 알림 확인
   }
 
   // 알림 권한 요청

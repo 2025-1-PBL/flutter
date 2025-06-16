@@ -1,5 +1,4 @@
 class ApiConfig {
-
   // 서버 기본 URL
   // // ocb.iptime.org
   // static const String baseUrl = 'http://127.0.0.1:8080/api';
