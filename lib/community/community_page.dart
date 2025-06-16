@@ -322,6 +322,14 @@ class _CommunityPageState extends State<CommunityPage> {
               // 게시글 작성 후 새로고침
               if (mounted && result == true) {
                 await _loadArticles();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('게시글이 작성되었습니다.'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Color(0xFF4CAF50),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
               }
             },
             backgroundColor: fabColor,
@@ -573,6 +581,14 @@ class _CommunityPageState extends State<CommunityPage> {
           // 게시물이 삭제되었거나 수정되었다면 목록 새로고침
           if (result == true) {
             await _loadArticles();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('게시글이 수정되었습니다.'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Color(0xFF4CAF50),
+                duration: Duration(seconds: 2),
+              ),
+            );
           } else if (result != null && result['deleted'] == true) {
             setState(() {
               final deletedId = result['articleId'];

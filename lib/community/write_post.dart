@@ -90,47 +90,26 @@ class _WritePostScreenState extends State<WritePostScreen> {
       if (isEditMode) {
         // 게시글 수정
         await _articleService.updateArticle(widget.post!['id'], articleData);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('게시글이 수정되었습니다.'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Color(0xFF4CAF50),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
       } else {
         // 새 게시글 작성
         await _articleService.createArticle(articleData);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('게시글이 작성되었습니다.'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Color(0xFF4CAF50),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-
-      if (mounted) {
-        Navigator.pop(context, true); // 새로고침을 위해 true 반환
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isEditMode ? '게시글 수정에 실패했습니다: $e' : '게시글 작성에 실패했습니다: $e',
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEditMode ? '게시글 수정에 실패했습니다: $e' : '게시글 작성에 실패했습니다: $e',
           ),
-        );
-      }
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
