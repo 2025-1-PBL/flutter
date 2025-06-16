@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_top_nav_bar.dart';
 import '../api/article_service.dart';
+import '../api/user_service.dart';
 import 'write_post.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -14,10 +15,12 @@ class PostDetailScreen extends StatefulWidget {
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
   final ArticleService _articleService = ArticleService();
+  final UserService _userService = UserService();
   bool _isLiked = false;
   bool _isLoading = false;
   String? _popupSelected;
   late Map<String, dynamic> _post;
+  String _authorName = '사용자';
 
   @override
   void initState() {
@@ -30,6 +33,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       final articleId = _post['id'] as int;
       final articleDetails = await _articleService.getArticleById(articleId);
+
+      // 작성자 정보 가져오기
+      if (articleDetails['authorId'] != null) {
+        try {
+          final userInfo = await _userService.getUserById(
+            articleDetails['authorId'],
+          );
+          setState(() {
+            _authorName = userInfo['name'] ?? '익명';
+          });
+        } catch (e) {
+          print('작성자 정보를 가져오는데 실패했습니다: $e');
+        }
+      }
+
       setState(() {
         _post = articleDetails;
         _isLiked = articleDetails['isLiked'] ?? false;
@@ -215,7 +233,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '작성자: ${_post['author'] ?? '익명'}',
+                                '작성자: $_authorName',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,

@@ -298,6 +298,7 @@ class _MemoPageState extends State<MemoPage> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             toolbarHeight: 80,
+            automaticallyImplyLeading: false,
             leadingWidth: 0,
             titleSpacing: 0,
             title: Row(
