@@ -7,7 +7,9 @@ import '../api/article_service.dart';
 import '../api/auth_service.dart';
 
 class WritePostScreen extends StatefulWidget {
-  const WritePostScreen({super.key});
+  final Map<String, dynamic>? post; // 수정할 게시글 데이터
+
+  const WritePostScreen({super.key, this.post});
 
   @override
   State<WritePostScreen> createState() => _WritePostScreenState();
@@ -24,6 +26,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
 
   String? _selectedAddress; // 위치 주소 저장 변수
   bool _isSubmitting = false;
+  bool get isEditMode => widget.post != null; // 수정 모드 여부
 
   bool get isFormValid =>
       _titleController.text.trim().isNotEmpty &&
@@ -34,6 +37,13 @@ class _WritePostScreenState extends State<WritePostScreen> {
     super.initState();
     _titleController.addListener(_updateState);
     _contentController.addListener(_updateState);
+
+    // 수정 모드일 경우 기존 데이터 설정
+    if (isEditMode) {
+      _titleController.text = widget.post!['title'] ?? '';
+      _contentController.text = widget.post!['content'] ?? '';
+      _selectedAddress = widget.post!['location'];
+    }
   }
 
   void _updateState() => setState(() {});
@@ -77,25 +87,44 @@ class _WritePostScreenState extends State<WritePostScreen> {
         'authorId': userId,
       };
 
-      // 게시글 작성
-      await _articleService.createArticle(articleData);
+      if (isEditMode) {
+        // 게시글 수정
+        await _articleService.updateArticle(widget.post!['id'], articleData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('게시글이 수정되었습니다.'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        // 새 게시글 작성
+        await _articleService.createArticle(articleData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('게시글이 작성되었습니다.'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('게시글이 작성되었습니다.'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Color(0xFF4CAF50),
-            duration: Duration(seconds: 2),
-          ),
-        );
         Navigator.pop(context, true); // 새로고침을 위해 true 반환
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('게시글 작성에 실패했습니다: $e'),
+            content: Text(
+              isEditMode ? '게시글 수정에 실패했습니다: $e' : '게시글 작성에 실패했습니다: $e',
+            ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
@@ -125,10 +154,10 @@ class _WritePostScreenState extends State<WritePostScreen> {
       body: Column(
         children: [
           CustomTopBar(
-            title: '게시물 작성',
+            title: isEditMode ? '게시물 수정' : '게시물 작성',
             onBack: () => Navigator.pop(context),
             onAction: isFormValid ? _submitPost : null,
-            actionText: '작성 완료',
+            actionText: isEditMode ? '수정 완료' : '작성 완료',
           ),
           Expanded(
             child: Padding(

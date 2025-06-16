@@ -35,10 +35,13 @@ class _NotificationPageState extends State<NotificationPage> {
 
       setState(() {
         notifications =
-            response.map((json) {
-              print('알림 아이템 JSON: $json'); // 각 알림 아이템 데이터 확인
-              return NotificationItem.fromJson(json);
-            }).toList();
+            response
+                .map((json) {
+                  print('알림 아이템 JSON: $json'); // 각 알림 아이템 데이터 확인
+                  return NotificationItem.fromJson(json);
+                })
+                .where((notification) => !notification.isRead) // 읽지 않은 알림만 필터링
+                .toList();
         isLoading = false;
       });
     } catch (e) {
@@ -106,12 +109,8 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> markAsRead(int notificationId) async {
     try {
       await _notificationService.markAsRead(notificationId);
-      setState(() {
-        final index = notifications.indexWhere((n) => n.id == notificationId);
-        if (index != -1) {
-          notifications[index] = notifications[index].copyWith(isRead: true);
-        }
-      });
+      // 읽음 처리 후 목록 새로고침
+      await fetchNotifications();
     } catch (e) {
       print('알림 읽음 처리 실패: $e');
       if (mounted) {
@@ -126,10 +125,8 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> markAllAsRead() async {
     try {
       await _notificationService.markAllAsRead();
-      setState(() {
-        notifications =
-            notifications.map((n) => n.copyWith(isRead: true)).toList();
-      });
+      // 모두 읽음 처리 후 목록 새로고침
+      await fetchNotifications();
     } catch (e) {
       print('모든 알림 읽음 처리 실패: $e');
       if (mounted) {
@@ -348,7 +345,7 @@ class NotificationItem {
       type: json['type'],
       referenceId: json['referenceId'] ?? 0,
       createdAt: DateTime.parse(json['createdAt']),
-      isRead: json['isRead'] ?? false,
+      isRead: json['read'] ?? false,
     );
   }
 

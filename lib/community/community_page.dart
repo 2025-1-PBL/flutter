@@ -280,17 +280,17 @@ class _CommunityPageState extends State<CommunityPage> {
                 ),
               )
             else if (filteredPosts.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text(
-                      '게시글이 없습니다.',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    '게시글이 없습니다.',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
-                )
-              else
-                _buildVerticalCategoryList(),
+                ),
+              )
+            else
+              _buildVerticalCategoryList(),
           ],
         ),
       ),
@@ -314,13 +314,13 @@ class _CommunityPageState extends State<CommunityPage> {
               await Future.delayed(const Duration(milliseconds: 300));
               if (!mounted) return;
               setState(() => isFabPressed = false);
-              await Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const WritePostScreen()),
               );
 
               // 게시글 작성 후 새로고침
-              if (mounted) {
+              if (mounted && result == true) {
                 await _loadArticles();
               }
             },
@@ -564,11 +564,22 @@ class _CommunityPageState extends State<CommunityPage> {
     itemBuilder: (context, index) {
       final post = filteredPosts[index];
       return InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
           );
+
+          // 게시물이 삭제되었거나 수정되었다면 목록 새로고침
+          if (result == true) {
+            await _loadArticles();
+          } else if (result != null && result['deleted'] == true) {
+            setState(() {
+              final deletedId = result['articleId'];
+              posts.removeWhere((p) => p['id'] == deletedId);
+              filteredPosts.removeWhere((p) => p['id'] == deletedId);
+            });
+          }
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),

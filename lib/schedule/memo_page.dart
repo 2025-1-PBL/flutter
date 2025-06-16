@@ -305,7 +305,7 @@ class _MemoPageState extends State<MemoPage> {
                 const Icon(Icons.calendar_today, color: Colors.black, size: 24),
                 const SizedBox(width: 8),
                 Text(
-                  isPersonalSelected ? '개인일정3' : '공유일정',
+                  isPersonalSelected ? '개인일정' : '공유일정',
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 20,

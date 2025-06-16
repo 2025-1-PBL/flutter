@@ -73,16 +73,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   color: Colors.white,
                   onSelected: (value) {
                     if (value == 'delete_selected') {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('삭제 모드 활성화')),
-                      );
+                      _showDeleteConfirmationDialog();
                     } else if (value == 'edit_post') {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const WritePostScreen(),
+                          builder: (_) => WritePostScreen(post: _post),
                         ),
-                      );
+                      ).then((result) {
+                        // 수정이 완료되면 게시글 상세 정보 새로고침
+                        if (result == true) {
+                          _loadArticleDetails();
+                        }
+                      });
                     }
                   },
                   itemBuilder:
@@ -288,6 +291,74 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _deleteArticle() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final articleId = _post['id'] as int;
+      await _articleService.deleteArticle(articleId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('게시글이 삭제되었습니다.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 1),
+          ),
+        );
+        Navigator.pop(context, {'deleted': true, 'articleId': articleId});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('게시글 삭제에 실패했습니다: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text('게시글 삭제'),
+            content: const Text('정말로 이 게시글을 삭제하시겠습니까?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('취소', style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('삭제', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+
+    if (result == true) {
+      _deleteArticle();
     }
   }
 }
