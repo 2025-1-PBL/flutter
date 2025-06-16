@@ -378,10 +378,7 @@ class _MapMainPageState extends State<MapMainPage> {
                       message.split('\n').length > 1
                           ? message.split('\n')[1]
                           : '',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],

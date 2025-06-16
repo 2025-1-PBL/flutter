@@ -6,6 +6,7 @@ import 'package:mapmoa/mypage/my_info_edit_screen.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../community/community_page.dart';
 import '../map/map_page.dart';
+import '../map/map_main.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'notification_page.dart';
 import 'package:geolocator/geolocator.dart';
@@ -306,6 +307,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _checkPermissionAndGetLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('위치 서비스가 비활성화되어 있습니다.');
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('위치 권한이 거부되었습니다.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('위치 권한이 영구적으로 거부되었습니다.');
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _currentLocation = NLatLng(position.latitude, position.longitude);
+      });
+
+      if (_mapController != null && _currentLocation != null) {
+        final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+          target: _currentLocation!,
+          zoom: 13,
+        );
+        await _mapController!.updateCamera(cameraUpdate);
+      }
+    } catch (e) {
+      print('위치 가져오기 실패: $e');
+    }
+  }
+
   @override
   void dispose() {
     _mapController?.dispose();
@@ -572,43 +615,61 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const MapPage()),
+          MaterialPageRoute(
+            builder:
+                (context) => const Scaffold(
+                  body: MapMainPage(),
+                  bottomNavigationBar: CustomBottomNavBar(currentIndex: 1),
+                ),
+          ),
         );
       },
       child: Container(
-        decoration: _boxDecoration(),
+        height: 200,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child:
-              _isMapInitialized && _currentLocation != null
-                  ? NaverMap(
-                    onMapReady: (controller) {
-                      _mapController = controller;
-                      // 현재 위치로 카메라 이동
-                      final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
-                        target: _currentLocation!,
-                        zoom: 13, // 홈 화면에서는 조금 더 넓은 뷰
+          child: Stack(
+            children: [
+              NaverMap(
+                onMapReady: (controller) {
+                  _mapController = controller;
+                  _checkPermissionAndGetLocation();
+                },
+              ),
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => const Scaffold(
+                                body: MapMainPage(),
+                                bottomNavigationBar: CustomBottomNavBar(
+                                  currentIndex: 1,
+                                ),
+                              ),
+                        ),
                       );
-                      _mapController!.updateCamera(cameraUpdate);
                     },
-                  )
-                  : Container(
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: Color(0xFFFFA724)),
-                          SizedBox(height: 8),
-                          Text(
-                            '지도를 불러오는 중...',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

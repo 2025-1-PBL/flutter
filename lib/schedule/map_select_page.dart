@@ -23,6 +23,7 @@ class _MapSelectPageState extends State<MapSelectPage> {
   void initState() {
     super.initState();
     _initializeNaverMap();
+    _checkPermissionAndGetLocation();
   }
 
   Future<void> _initializeNaverMap() async {
@@ -33,22 +34,136 @@ class _MapSelectPageState extends State<MapSelectPage> {
     });
   }
 
-  Future<void> _moveToCurrentLocation() async {
-    final hasPermission = await Geolocator.checkPermission();
-    if (hasPermission == LocationPermission.denied) {
-      await Geolocator.requestPermission();
+  Future<void> _checkPermissionAndGetLocation() async {
+    try {
+      // 위치 서비스가 활성화되어 있는지 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('위치 서비스가 비활성화되어 있습니다.');
+        _setDefaultLocation();
+        return;
+      }
+
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('위치 권한이 거부되었습니다.');
+          _setDefaultLocation();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('위치 권한이 영구적으로 거부되었습니다.');
+        _setDefaultLocation();
+        return;
+      }
+
+      // 현재 위치 가져오기
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      if (_mapController != null) {
+        final currentLatLng = NLatLng(position.latitude, position.longitude);
+        final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+          target: currentLatLng,
+          zoom: 15,
+        )..setAnimation();
+
+        await _mapController!.updateCamera(cameraUpdate);
+      }
+    } catch (e) {
+      print('위치 가져오기 실패: $e');
+      _setDefaultLocation();
     }
+  }
 
-    final position = await Geolocator.getCurrentPosition();
-    final currentLatLng = NLatLng(position.latitude, position.longitude);
-
+  // 기본 위치 설정 (서울 시청)
+  void _setDefaultLocation() {
     if (_mapController != null) {
+      final defaultLocation = const NLatLng(37.5665, 126.9780); // 서울 시청
       final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
-        target: currentLatLng,
-        zoom: 15,
+        target: defaultLocation,
+        zoom: 12,
       )..setAnimation();
 
-      await _mapController!.updateCamera(cameraUpdate);
+      _mapController!.updateCamera(cameraUpdate);
+    }
+  }
+
+  Future<void> _moveToCurrentLocation() async {
+    try {
+      // 위치 서비스가 활성화되어 있는지 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('위치 서비스를 활성화해주세요.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('위치 권한이 필요합니다.'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('설정에서 위치 권한을 허용해주세요.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+      final currentLatLng = NLatLng(position.latitude, position.longitude);
+
+      if (_mapController != null) {
+        final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+          target: currentLatLng,
+          zoom: 15,
+        )..setAnimation();
+
+        await _mapController!.updateCamera(cameraUpdate);
+      }
+    } catch (e) {
+      print('현재 위치 이동 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('위치를 가져오는데 실패했습니다.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -61,7 +176,10 @@ class _MapSelectPageState extends State<MapSelectPage> {
     _mapController?.clearOverlays();
     _mapController?.addOverlay(marker);
 
-    final address = await _getAddressFromCoords(latLng.latitude, latLng.longitude);
+    final address = await _getAddressFromCoords(
+      latLng.latitude,
+      latLng.longitude,
+    );
     setState(() {
       selectedAddress = address ?? '주소를 불러올 수 없습니다';
     });
@@ -69,17 +187,21 @@ class _MapSelectPageState extends State<MapSelectPage> {
 
   Future<String?> _getAddressFromCoords(double lat, double lng) async {
     final url = Uri.parse(
-        'https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc'
-            '?request=coordsToaddr'
-            '&coords=$lng,$lat'
-            '&sourcecrs=epsg:4326'
-            '&output=json'
-            '&orders=roadaddr,addr,admcode,legalcode');
+      'https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc'
+      '?request=coordsToaddr'
+      '&coords=$lng,$lat'
+      '&sourcecrs=epsg:4326'
+      '&output=json'
+      '&orders=roadaddr,addr,admcode,legalcode',
+    );
 
-    final response = await http.get(url, headers: {
-      'X-NCP-APIGW-API-KEY-ID': 'til8qbn0pj',
-      'X-NCP-APIGW-API-KEY': 'An9HynJ2ZOKhkw3hYKxEccniuCX8hJAOvlN0Qayl',
-    });
+    final response = await http.get(
+      url,
+      headers: {
+        'X-NCP-APIGW-API-KEY-ID': 'til8qbn0pj',
+        'X-NCP-APIGW-API-KEY': 'An9HynJ2ZOKhkw3hYKxEccniuCX8hJAOvlN0Qayl',
+      },
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -98,11 +220,16 @@ class _MapSelectPageState extends State<MapSelectPage> {
           final buildingName = result['land']['addition0']?['value'] ?? '';
 
           final roadAddr = '$area1 $area2 $roadName $fullNumber';
-          return buildingName.isNotEmpty ? '$buildingName ($roadAddr)' : roadAddr;
+          return buildingName.isNotEmpty
+              ? '$buildingName ($roadAddr)'
+              : roadAddr;
         }
       }
 
-      final fallback = results.firstWhere((r) => r['name'] == 'admcode', orElse: () => null);
+      final fallback = results.firstWhere(
+        (r) => r['name'] == 'admcode',
+        orElse: () => null,
+      );
       if (fallback != null) {
         final region = fallback['region'];
         return '${region['area1']['name']} ${region['area2']['name']} ${region['area3']['name']}';
@@ -129,19 +256,14 @@ class _MapSelectPageState extends State<MapSelectPage> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
-          CustomTopBar(
-            title: '위치 선택',
-            onBack: () => Navigator.pop(context),
-          ),
+          CustomTopBar(title: '위치 선택', onBack: () => Navigator.pop(context)),
           Expanded(
             child: Stack(
               children: [
