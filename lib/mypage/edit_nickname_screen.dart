@@ -43,7 +43,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('닉네임이 변경되었습니다.'),
+            content: Text('이름이 변경되었습니다.'),
             backgroundColor: Color(0xFF4CAF50),
           ),
         );
@@ -53,7 +53,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('닉네임 변경에 실패했습니다: $e'),
+            content: Text('이름 변경에 실패했습니다: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -86,7 +86,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomTopBar(title: '닉네임 변경', onBack: () => Navigator.pop(context)),
+          CustomTopBar(title: '이름 변경', onBack: () => Navigator.pop(context)),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40), // ✅ 마진 40 적용
@@ -95,7 +95,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
                 children: [
                   const SizedBox(height: 32),
                   const Text(
-                    '새로운 닉네임을 입력해주세요.',
+                    '새로운 이름을 입력해주세요.',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -104,7 +104,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
                   TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: '새로운 닉네임',
+                      hintText: '새로운 이름',
                       hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
                       filled: true,
                       fillColor: Colors.white,
@@ -131,7 +131,7 @@ class _EditNicknameScreenState extends State<EditNicknameScreen> {
                   if (_isError) ...[
                     const SizedBox(height: 8),
                     const Text(
-                      '닉네임을 2~10자로 입력해주세요.',
+                      '이름을 2~10자로 입력해주세요.',
                       style: TextStyle(color: Colors.red),
                     ),
                   ],

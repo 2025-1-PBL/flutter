@@ -182,7 +182,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
                       children: [
                         _buildItem(
                           context,
-                          '닉네임',
+                          '이름',
                           trailingWidget: Text(
                             _currentUser?['name'] ?? '사용자',
                             style: const TextStyle(color: Colors.grey),
@@ -307,7 +307,7 @@ class _MyInfoEditScreenState extends State<MyInfoEditScreen> {
   }) {
     return InkWell(
       onTap: () {
-        if (title == '닉네임') {
+        if (title == '이름') {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const EditNicknameScreen()),

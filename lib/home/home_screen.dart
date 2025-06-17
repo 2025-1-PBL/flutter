@@ -168,42 +168,53 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSignupCompleteModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // ✅ 이것 추가
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return SizedBox(
-          height: 200,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '회원가입',
-                        style: TextStyle(
-                          color: Color(0xFFFFA724),
-                          fontWeight: FontWeight.bold,
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width, // ✅ 진짜 화면 너비로
+            height: 200,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              color: Colors.white,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '회원가입',
+                          style: TextStyle(
+                            color: Color(0xFFFFA724),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      TextSpan(
-                        text: '이 되었습니다!',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
+                        TextSpan(
+                          text: '이 되었습니다!',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    style: TextStyle(fontSize: 18),
                   ),
-                  style: TextStyle(fontSize: 18),
-                ),
-                SizedBox(height: 10),
-                Text('맵모의 회원이 되신 것을 환영합니다!'),
-              ],
+                  SizedBox(height: 10),
+                  Text('맵모의 회원이 되신 것을 환영합니다!'),
+                ],
+              ),
             ),
           ),
         );
@@ -625,6 +636,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
+        width: double.infinity,
         height: 200,
         decoration: BoxDecoration(
           color: Colors.white,

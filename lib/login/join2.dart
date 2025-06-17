@@ -16,7 +16,6 @@ class _Join2ScreenState extends State<Join2Screen> {
   final _idController = TextEditingController();
   final _pwController = TextEditingController();
   final _pwConfirmController = TextEditingController();
-  final _nicknameController = TextEditingController();
   final _nameController = TextEditingController();
   final _birthController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -35,7 +34,6 @@ class _Join2ScreenState extends State<Join2Screen> {
         _idController.text.isNotEmpty &&
         _pwController.text.isNotEmpty &&
         _pwConfirmController.text.isNotEmpty &&
-        _nicknameController.text.isNotEmpty &&
         _nameController.text.isNotEmpty &&
         _birthController.text.isNotEmpty &&
         _phoneController.text.isNotEmpty;
@@ -52,9 +50,6 @@ class _Join2ScreenState extends State<Join2Screen> {
     print('  이메일: ${_idController.text.isNotEmpty} (${_idController.text})');
     print('  비밀번호: ${_pwController.text.isNotEmpty}');
     print('  비밀번호 확인: ${_pwConfirmController.text.isNotEmpty}');
-    print(
-      '  닉네임: ${_nicknameController.text.isNotEmpty} (${_nicknameController.text})',
-    );
     print('  이름: ${_nameController.text.isNotEmpty} (${_nameController.text})');
     print(
       '  생년월일: ${_birthController.text.isNotEmpty} (${_birthController.text})',
@@ -74,7 +69,6 @@ class _Join2ScreenState extends State<Join2Screen> {
       _idController,
       _pwController,
       _pwConfirmController,
-      _nicknameController,
       _nameController,
       _birthController,
       _phoneController,
@@ -97,7 +91,6 @@ class _Join2ScreenState extends State<Join2Screen> {
     _idController.dispose();
     _pwController.dispose();
     _pwConfirmController.dispose();
-    _nicknameController.dispose();
     _nameController.dispose();
     _birthController.dispose();
     _phoneController.dispose();
@@ -169,7 +162,6 @@ class _Join2ScreenState extends State<Join2Screen> {
                             ),
                           ),
                         const SizedBox(height: 5),
-                        _buildTextField('닉네임*', _nicknameController),
                         const SizedBox(height: 15),
                         const Text(
                           '개인정보',
@@ -232,7 +224,6 @@ class _Join2ScreenState extends State<Join2Screen> {
     try {
       final email = _idController.text.trim();
       final password = _pwController.text.trim();
-      final nickname = _nicknameController.text.trim();
       final name = _nameController.text.trim();
       final birth = _birthController.text.trim();
       final phone = _phoneController.text.trim();
@@ -240,7 +231,6 @@ class _Join2ScreenState extends State<Join2Screen> {
       final userData = {
         'email': email,
         'password': password,
-        'nickname': nickname,
         'name': name,
         'birth': birth,
         'phone': phone,

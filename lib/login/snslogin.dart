@@ -26,9 +26,8 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
   }
 
   void _initDeepLinks() {
-    // 앱이 실행 중일 때 딥링크 처리
     _appLinks.uriLinkStream.listen(
-      (Uri uri) {
+          (Uri uri) {
         _handleDeepLink(uri);
       },
       onError: (err) {
@@ -39,8 +38,6 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
 
   void _handleDeepLink(Uri uri) {
     print('SnsLoginScreen - 딥링크 수신: $uri');
-
-    // 커스텀 스킴 딥링크 처리 (mapmo://oauth2/redirect)
     if (uri.scheme == 'mapmo' &&
         uri.host == 'oauth2' &&
         uri.path == '/redirect') {
@@ -56,39 +53,28 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
 
   Future<void> _handleOAuth2Success(String token, String refreshToken) async {
     try {
-      // 토큰 저장
       await SocialLoginService.saveTokensFromCallback(token, refreshToken);
-
-      // AuthService를 사용하여 로그인 상태 확인
       final isLoggedIn = await _authService.isLoggedIn();
 
       if (isLoggedIn) {
-        print('SnsLoginScreen - 소셜 로그인 성공!');
-
-        // 로딩 상태 해제
         if (mounted) {
           setState(() {
             _isLoading = false;
             _loadingProvider = null;
           });
-        }
 
-        // 홈 화면으로 이동
-        if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
-            (route) => false, // 모든 이전 화면 제거
+                (route) => false,
           );
         }
       } else {
-        print('SnsLoginScreen - 소셜 로그인 실패: 토큰이 유효하지 않습니다.');
         if (mounted) {
           setState(() {
             _isLoading = false;
             _loadingProvider = null;
           });
-
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('로그인에 실패했습니다. 다시 시도해주세요.'),
@@ -131,14 +117,11 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 🔄 로고 이미지 (LoginScreen과 동일하게 적용)
                   Container(
                     height: 220,
                     alignment: Alignment.center,
                     child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                   ),
-
-                  // 타이틀
                   const Text(
                     '지금 Map-Mo와\n하루를 함께 하세요!',
                     textAlign: TextAlign.center,
@@ -152,52 +135,39 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 카카오 로그인 버튼
                   _snsButton(
                     color: const Color(0xFFFEE500),
                     text: '카카오 로그인',
                     textColor: Colors.black,
-                    icon: Icons.chat_bubble_outline,
+                    imagePath: 'assets/kakao.png',
                     isLoading: _isLoading && _loadingProvider == 'kakao',
-                    onPressed:
-                        _isLoading ? null : () => _handleSocialLogin('kakao'),
+                    onPressed: _isLoading ? null : () => _handleSocialLogin('kakao'),
                   ),
                   const SizedBox(height: 10),
 
-                  // 구글 로그인 버튼
                   _snsButton(
                     color: Colors.white,
                     text: 'Google 로그인',
                     textColor: Colors.black87,
-                    icon: Icons.g_mobiledata,
+                    imagePath: 'assets/google.png',
                     border: Border.all(color: Colors.grey.shade300),
                     isLoading: _isLoading && _loadingProvider == 'google',
-                    onPressed:
-                        _isLoading ? null : () => _handleSocialLogin('google'),
+                    onPressed: _isLoading ? null : () => _handleSocialLogin('google'),
                   ),
                   const SizedBox(height: 10),
 
-                  // 네이버 로그인 버튼
                   _snsButton(
                     color: const Color(0xFF03C75A),
                     text: '네이버 로그인',
                     textColor: Colors.white,
-                    icon: Icons.nat,
+                    imagePath: 'assets/naver.png',
                     isLoading: _isLoading && _loadingProvider == 'naver',
-                    onPressed:
-                        _isLoading ? null : () => _handleSocialLogin('naver'),
+                    onPressed: _isLoading ? null : () => _handleSocialLogin('naver'),
                   ),
-
                   const SizedBox(height: 16),
 
-                  // 다른 방법으로 로그인
                   TextButton(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : () {
-                              Navigator.pop(context);
-                            },
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                     child: const Text(
                       '다른 방법으로 로그인',
                       style: TextStyle(
@@ -210,24 +180,19 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
                 ],
               ),
             ),
-
-            // 하단 회원가입 유도
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 5),
                 child: GestureDetector(
-                  onTap:
-                      _isLoading
-                          ? null
-                          : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const JoinScreen(),
-                              ),
-                            );
-                          },
+                  onTap: _isLoading
+                      ? null
+                      : () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const JoinScreen(),
+                    ),
+                  ),
                   child: RichText(
                     text: const TextSpan(
                       text: '아직 맵모 회원이 아니신가요? ',
@@ -275,9 +240,7 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${provider.toUpperCase()} 로그인을 시작합니다. 브라우저를 확인해주세요.',
-            ),
+            content: Text('${provider.toUpperCase()} 로그인을 시작합니다. 브라우저를 확인해주세요.'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 3),
           ),
@@ -307,30 +270,18 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
     required Color color,
     required String text,
     required Color textColor,
-    required IconData icon,
+    required String imagePath,
     required VoidCallback? onPressed,
     Border? border,
     bool isLoading = false,
   }) {
+    final isNaver = imagePath.contains('naver');
+    final isKakao = imagePath.contains('kakao');
+
     return SizedBox(
       height: 56,
-      child: ElevatedButton.icon(
+      child: ElevatedButton(
         onPressed: onPressed,
-        icon:
-            isLoading
-                ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                  ),
-                )
-                : Icon(icon, color: textColor),
-        label: Text(
-          isLoading ? '로그인 중...' : text,
-          style: TextStyle(color: textColor, fontSize: 16),
-        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           elevation: 0,
@@ -338,6 +289,33 @@ class _SnsLoginScreenState extends State<SnsLoginScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
             side: border?.top ?? BorderSide.none,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(left: (isKakao || isNaver) ? 0 : 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              isLoading
+                  ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                ),
+              )
+                  : Image.asset(
+                imagePath,
+                width: isNaver ? 30 : 23,
+                height: isNaver ? 30 : 34,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                isLoading ? '로그인 중...' : text,
+                style: TextStyle(color: textColor, fontSize: 16),
+              ),
+            ],
           ),
         ),
       ),

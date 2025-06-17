@@ -158,117 +158,104 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
-          // 상단바는 전체 폭
           CustomTopBar(
             title: '알림 목록',
             onBack: () => Navigator.pop(context),
             actions: [
               IconButton(
-                icon: const Icon(Icons.done_all),
+                icon: const Icon(Icons.check),
                 onPressed: markAllAsRead,
                 tooltip: '모두 읽음 처리',
               ),
             ],
           ),
-
-          // 나머지 아래 내용은 마진 40
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
-              child:
-                  isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : notifications.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.notifications_none,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              '알림이 없습니다.',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: checkNewNotifications,
-                              child: const Text('새 알림 확인'),
-                            ),
-                          ],
-                        ),
-                      )
-                      : RefreshIndicator(
-                        onRefresh: fetchNotifications,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.only(top: 20, bottom: 20),
-                          itemCount: notifications.length,
-                          separatorBuilder: (_, __) => const Divider(),
-                          itemBuilder: (context, index) {
-                            final notification = notifications[index];
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero, // 내부 여백 제거
-                              leading: CircleAvatar(
-                                backgroundColor:
-                                    notification.isRead
-                                        ? Colors.grey
-                                        : const Color(0xFFFFA724),
-                                child: Icon(
-                                  _getNotificationIcon(notification.type),
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                notification.title,
-                                style: TextStyle(
-                                  fontWeight:
-                                      notification.isRead
-                                          ? FontWeight.normal
-                                          : FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    notification.message,
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _formatDate(notification.createdAt),
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing:
-                                  notification.isRead
-                                      ? null
-                                      : Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                              onTap: () {
-                                markAsRead(notification.id);
-                                // 알림 타입에 따라 적절한 화면으로 이동
-                                _navigateToNotificationTarget(notification);
-                              },
-                            );
-                          },
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : notifications.isEmpty
+                  ? Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 250),
+                  const Icon(Icons.notifications_none, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('알림이 없습니다.', style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 15),
+                  GestureDetector(
+                    onTap: checkNewNotifications,
+                    child: Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2B1D1D).withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.refresh, color: Color(0xFF767676), size: 18),
+                          SizedBox(width: 6),
+                          Text('새 알림 확인', style: TextStyle(fontSize: 15, color: Color(0xFF767676))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+                  : RefreshIndicator(
+                onRefresh: fetchNotifications,
+                child: ListView.separated(
+                  padding: const EdgeInsets.only(top: 20, bottom: 20),
+                  itemCount: notifications.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final notification = notifications[index];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: notification.isRead ? Colors.grey : const Color(0xFFFFA724),
+                        child: Icon(_getNotificationIcon(notification.type), color: Colors.white, size: 20),
+                      ),
+                      title: Text(
+                        notification.title,
+                        style: TextStyle(
+                          fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(notification.message, style: const TextStyle(fontSize: 14)),
+                          const SizedBox(height: 4),
+                          Text(_formatDate(notification.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                      trailing: notification.isRead
+                          ? null
+                          : Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      ),
+                      onTap: () {
+                        markAsRead(notification.id);
+                        _navigateToNotificationTarget(notification);
+                      },
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ],

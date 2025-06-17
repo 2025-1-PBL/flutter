@@ -48,10 +48,13 @@ class EventListSheet extends StatelessWidget {
                     const SizedBox(width: 10),
                     Transform.scale(
                       scale: 0.9,
-                      child: Switch(
-                        value: showEvents,
-                        onChanged: onToggleEvents,
-                        activeColor: const Color(0xFFFFA724),
+                      child: GestureDetector(
+                        onTap: () => onToggleEvents(!showEvents),
+                        child: Switch(
+                          value: showEvents,
+                          onChanged: (value) => onToggleEvents(value),
+                          activeColor: const Color(0xFFFFA724),
+                        ),
                       ),
                     ),
                   ],

@@ -58,6 +58,9 @@ flutter:
     - assets/logo.png
     - assets/location.png
     - assets/icon.png
+    - assets/google.png
+    - assets/kakao.png
+    - assets/naver.png
     - assets/markers/blue.png
     - assets/markers/green.png
     - assets/markers/orange.png
