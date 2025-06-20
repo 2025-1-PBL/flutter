@@ -1,8 +1,10 @@
+import 'dart:math' as Math;
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -12,13 +14,19 @@ class WebSocketService {
   late StompClient stompClient;
   bool isConnected = false;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // 웹소켓 연결 초기화
   Future<void> initializeWebSocket() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
+      // SharedPreferences 대신 FlutterSecureStorage 사용
+      final authToken = await _storage.read(key: 'token');
+
+      print('웹소켓 연결 시도 - 토큰 상태: ${authToken != null ? "토큰 있음" : "토큰 없음"}');
+      if (authToken != null) {
+        print('토큰 확인: ${authToken.substring(0, Math.min(20, authToken.length))}...');
+      }
 
       if (authToken == null) {
         print('인증 토큰이 없어 웹소켓 연결을 건너뜁니다.');
@@ -138,23 +146,23 @@ class WebSocketService {
 
   // 로컬 알림 표시
   Future<void> _showLocalNotification(
-    String title,
-    String message,
-    String type,
-    int referenceId,
-    int notificationId,
-  ) async {
+      String title,
+      String message,
+      String type,
+      int referenceId,
+      int notificationId,
+      ) async {
     try {
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
-            'realtime_notifications',
-            '실시간 알림',
-            importance: Importance.high,
-            priority: Priority.high,
-            showWhen: true,
-            enableVibration: true,
-            playSound: true,
-          );
+      AndroidNotificationDetails(
+        'realtime_notifications',
+        '실시간 알림',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+      );
 
       const NotificationDetails platformChannelSpecifics = NotificationDetails(
         android: androidPlatformChannelSpecifics,
@@ -179,8 +187,7 @@ class WebSocketService {
   // 서버에 알림 수신 확인
   Future<void> _markNotificationAsReceived(int notificationId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
+      final authToken = await _storage.read(key: 'token');
 
       if (authToken != null) {
         final dio = Dio();

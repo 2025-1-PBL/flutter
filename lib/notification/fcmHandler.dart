@@ -5,6 +5,7 @@ import '../firebase_options.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // 백그라운드 메시지 핸들러
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -25,7 +26,8 @@ class FCMHandler {
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
+  static final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // FCM 초기화
   Future<void> initialize() async {
@@ -66,14 +68,14 @@ class FCMHandler {
     try {
       NotificationSettings settings = await _firebaseMessaging
           .requestPermission(
-            alert: true,
-            announcement: false,
-            badge: true,
-            carPlay: false,
-            criticalAlert: false,
-            provisional: false,
-            sound: true,
-          );
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
 
       print('알림 권한 상태: ${settings.authorizationStatus}');
     } catch (e) {
@@ -84,8 +86,8 @@ class FCMHandler {
   // 서버에 FCM 토큰 등록
   Future<void> _registerTokenToServer(String token) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
+      // SharedPreferences 대신 FlutterSecureStorage 사용
+      final authToken = await _storage.read(key: 'token');
 
       if (authToken != null) {
         final dio = Dio();
@@ -99,6 +101,12 @@ class FCMHandler {
             'platform': 'flutter',
           },
         );
+
+        print('FCM 토큰 요청 데이터: ${jsonEncode({
+          'fcmToken': token,
+          'deviceType': 'mobile',
+          'platform': 'flutter',
+        })}');
 
         print('FCM 토큰이 서버에 등록되었습니다.');
       } else {
@@ -149,11 +157,10 @@ class FCMHandler {
 
   // 백그라운드 알림 수신 확인
   static Future<void> _markBackgroundNotificationAsReceived(
-    int notificationId,
-  ) async {
+      int notificationId,
+      ) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
+      final authToken = await _storage.read(key: 'token');
 
       if (authToken != null) {
         final dio = Dio();
@@ -180,19 +187,19 @@ class FCMHandler {
       // 알림 타입에 따른 처리
       switch (type) {
         case 'chat':
-          // 채팅 화면으로 이동
+        // 채팅 화면으로 이동
           print('채팅 알림 클릭: $referenceId');
           break;
         case 'friend_request':
-          // 친구 요청 화면으로 이동
+        // 친구 요청 화면으로 이동
           print('친구 요청 알림 클릭: $referenceId');
           break;
         case 'meeting':
-          // 모임 알림 화면으로 이동
+        // 모임 알림 화면으로 이동
           print('모임 알림 클릭: $referenceId');
           break;
         default:
-          // 일반 알림 처리
+        // 일반 알림 처리
           print('일반 알림 클릭: $referenceId');
           break;
       }
@@ -203,21 +210,21 @@ class FCMHandler {
 
   // 로컬 알림 표시
   Future<void> _showLocalNotification(
-    String title,
-    String body,
-    Map<String, dynamic> data,
-  ) async {
+      String title,
+      String body,
+      Map<String, dynamic> data,
+      ) async {
     try {
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
-            'fcm_notifications',
-            'FCM 알림',
-            importance: Importance.high,
-            priority: Priority.high,
-            showWhen: true,
-            enableVibration: true,
-            playSound: true,
-          );
+      AndroidNotificationDetails(
+        'fcm_notifications',
+        'FCM 알림',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+      );
 
       const NotificationDetails platformChannelSpecifics = NotificationDetails(
         android: androidPlatformChannelSpecifics,
@@ -238,8 +245,7 @@ class FCMHandler {
   // 서버에 알림 수신 확인
   Future<void> _markNotificationAsReceived(int notificationId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
+      final authToken = await _storage.read(key: 'token');
 
       if (authToken != null) {
         final dio = Dio();

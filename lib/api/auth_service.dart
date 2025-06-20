@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'config.dart';
+import 'package:mapmoa/notification/setupFCM.dart'; // FCM 설정 관련 임포트 추가
 
 class AuthService {
   final Dio _dio = Dio();
@@ -19,6 +20,20 @@ class AuthService {
 
       await _storage.write(key: 'token', value: token);
       await _storage.write(key: 'refreshToken', value: refreshToken);
+
+      // 로그인 성공 후 FCM 토큰 등록 및 웹소켓 연결 시도
+      try {
+        // FCM 설정
+        await setupFCM();
+
+        // 웹소켓 연결
+        await setupNotifications();
+
+        print('로그인 후 FCM 토큰 등록 및 웹소켓 연결 완료');
+      } catch (e) {
+        print('로그인 후 FCM 토큰 등록 또는 웹소켓 연결 실패: $e');
+        // 로그인 자체는 성공했으므로 오류를 무시하고 진행합니다.
+      }
 
       return response.data;
     } catch (e) {
